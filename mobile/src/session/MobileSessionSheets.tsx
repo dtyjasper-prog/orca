@@ -23,7 +23,6 @@ import { MobileSessionBotSheet } from './MobileSessionBotSheet'
 import { MobileNewTabSheet } from './tabs/MobileNewTabSheet'
 import {
   MobileBrowserProfilePicker,
-  useMobileBrowserProfileLabel,
   useMobileNewBrowserProfile
 } from './tabs/MobileBrowserProfilePicker'
 import { MobileSessionTextSizeSheet } from './MobileSessionTextSizeSheet'
@@ -110,7 +109,6 @@ export function MobileSessionSheets({ controller }: { controller: MobileSessionC
     (showCreateTabDrawer && !isFloatingWorkspaceRoute && browserScreencastSupported === true) ||
       browserActionTarget != null
   )
-  const browserProfileLabel = useMobileBrowserProfileLabel(browserProfile.profiles)
   return (
     <>
       <MobileSessionBotSheet controller={controller} />
@@ -144,13 +142,7 @@ export function MobileSessionSheets({ controller }: { controller: MobileSessionC
         // (browser.tabCreate, files.createFile); the floating sentinel is
         // terminal-only over RPC, so those options hide there.
         canCreateBrowser={!isFloatingWorkspaceRoute}
-        browserProfileLabel={
-          browserProfile.profiles.length > 1
-            ? browserProfile.profileId === null
-              ? t('session.browserProfile.workspaceDefault', 'Workspace default')
-              : browserProfileLabel(browserProfile.profileId)
-            : null
-        }
+        browserProfileLabel={browserProfile.newTabLabel}
         onChooseBrowserProfile={() => browserProfile.setPickerOpen(true)}
         canCreateMarkdownNote={!isFloatingWorkspaceRoute && onPairedHost}
         onClose={() => setShowCreateTabDrawer(false)}
@@ -284,11 +276,7 @@ export function MobileSessionSheets({ controller }: { controller: MobileSessionC
         onClose={() => setBrowserActionTarget(null)}
         onNavigate={handleBrowserNavigationCommand}
         onCloseTab={handleCloseSessionTab}
-        profileLabel={
-          browserActionTarget?.browserProfileId && browserProfile.profiles.length > 0
-            ? browserProfileLabel(browserActionTarget.browserProfileId)
-            : null
-        }
+        profileLabel={browserProfile.tabLabel(browserActionTarget?.browserProfileId)}
         bulkCloseActions={bulkCloseActions}
       />
       <MobileBrowserProfilePicker
