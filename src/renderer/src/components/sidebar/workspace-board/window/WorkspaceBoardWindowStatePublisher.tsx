@@ -3,7 +3,7 @@ import { useAppStore } from '@/store/index'
 import { activateWorktreeFromSidebar } from '@/lib/workspace/activation/sidebar-worktree-activation'
 import {
   createWorkspaceBoardMirrorEncoder,
-  isWorkspaceBoardRelayedAction
+  readRelayedStoreAction
 } from './workspace-board-window-mirror'
 
 const PUBLISH_DELAY_MS = 100
@@ -59,7 +59,9 @@ export function WorkspaceBoardWindowStatePublisher(): null {
     const offRequested = api.onStateRequested(() => {
       windowOpen = true
       published = null
-      offStore ??= useAppStore.subscribe(queuePublish)
+      if (offStore === null) {
+        offStore = useAppStore.subscribe(queuePublish)
+      }
       publish()
     })
     const offOpenChanged = api.onOpenChanged((open) => {
@@ -68,15 +70,13 @@ export function WorkspaceBoardWindowStatePublisher(): null {
       }
     })
     const offAction = api.onAction((name, args) => {
-      if (!isWorkspaceBoardRelayedAction(name)) {
+      const action = readRelayedStoreAction(useAppStore.getState(), name)
+      if (!action) {
         return
       }
-      const action: unknown = Reflect.get(useAppStore.getState(), name)
-      if (typeof action === 'function') {
-        void Promise.resolve(Reflect.apply(action, undefined, args)).catch((error: unknown) => {
-          console.error(`[workspace-board-window] ${name} failed`, error)
-        })
-      }
+      void Promise.resolve(action(...args)).catch((error: unknown) => {
+        console.error(`[workspace-board-window] ${name} failed`, error)
+      })
     })
     const offReveal = api.onRevealWorktree((worktreeId, executionHostId) => {
       void activateWorktreeFromSidebar(worktreeId, executionHostId)

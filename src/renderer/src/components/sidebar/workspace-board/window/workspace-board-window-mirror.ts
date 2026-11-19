@@ -8,7 +8,10 @@ import type { AgentStatusEntry } from '../../../../../../shared/agent-status/con
 type StoreState = ReturnType<typeof useAppStore.getState>
 type MirrorPatch = Record<string, unknown>
 
-const AGENT_STATUS_ROWS = '__workspaceBoardMirrorAgentStatusRows'
+const AGENT_STATUSES_KIND = 'workspace-board-mirror/agent-statuses'
+/** AcceptedAgentStatuses is a class; it crosses IPC as its rows and is rebuilt on the other side. */
+type EncodedAgentStatuses = { kind: typeof AGENT_STATUSES_KIND; rows: unknown }
+type StoreAction = (...args: unknown[]) => unknown
 // Reads answer from the pop-out's mirrored state; every other store function runs in the main window.
 const LOCAL_FUNCTION_NAME = /^(get|select|has|is|resolve|find|compute|lookup|read)[A-Z]/
 
@@ -47,18 +50,46 @@ function findClassInstance(value: unknown, depth = 0): string | null {
 
 function encodeValue(value: unknown): unknown {
   if (value instanceof AcceptedAgentStatuses) {
-    return { [AGENT_STATUS_ROWS]: Array.from(value.entries()) }
+    const encoded: EncodedAgentStatuses = {
+      kind: AGENT_STATUSES_KIND,
+      rows: Array.from(value.entries())
+    }
+    return encoded
   }
   return value
 }
 
+function isEncodedAgentStatuses(value: unknown): value is EncodedAgentStatuses {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'kind' in value &&
+    value.kind === AGENT_STATUSES_KIND &&
+    'rows' in value
+  )
+}
+
 function decodeValue(value: unknown): unknown {
-  if (value && typeof value === 'object' && AGENT_STATUS_ROWS in value) {
-    const rows: unknown = Reflect.get(value, AGENT_STATUS_ROWS)
+  if (isEncodedAgentStatuses(value)) {
     // A fresh owner makes the store's ownership boundary resync every pane key.
-    return acceptedAgentStatuses(Array.isArray(rows) ? rows.filter(isAgentStatusRow) : [])
+    return acceptedAgentStatuses(
+      Array.isArray(value.rows) ? value.rows.filter(isAgentStatusRow) : []
+    )
   }
   return value
+}
+
+function isStoreAction(value: unknown): value is StoreAction {
+  return typeof value === 'function'
+}
+
+/** Main-window side: the store action a pop-out relayed, if the name is one it may relay. */
+export function readRelayedStoreAction(state: StoreState, name: string): StoreAction | null {
+  if (!isWorkspaceBoardRelayedAction(name)) {
+    return null
+  }
+  const action = new Map<string, unknown>(Object.entries(state)).get(name)
+  return isStoreAction(action) ? action : null
 }
 
 function isAgentStatusRow(row: unknown): row is readonly [string, AgentStatusEntry] {
@@ -81,11 +112,12 @@ export function createWorkspaceBoardMirrorEncoder(): {
   return {
     pick(next, previous) {
       const patch: MirrorPatch = {}
+      const before = previous ? new Map<string, unknown>(Object.entries(previous)) : null
       for (const [key, value] of Object.entries(next)) {
         if (typeof value === 'function' || excluded.has(key)) {
           continue
         }
-        if (previous && Object.is(Reflect.get(previous, key), value)) {
+        if (before && Object.is(before.get(key), value)) {
           continue
         }
         if (!(value instanceof AcceptedAgentStatuses) && !checked.has(key)) {
