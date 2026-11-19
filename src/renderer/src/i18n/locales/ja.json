@@ -6370,7 +6370,6 @@
         },
         "WorkspaceKanbanStatusLane": {
           "8ad104642b": "空の",
-          "3611d1ae7f": "ワークスペースボードの列のサイズを変更する",
           "2df01a03ff": "一致なし",
           "newWorkspaceIn": "「{{status}}」に新しいワークスペースを作成"
         },

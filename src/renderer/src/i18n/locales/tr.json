@@ -6613,7 +6613,6 @@
         },
         "WorkspaceKanbanStatusLane": {
           "8ad104642b": "Boş",
-          "3611d1ae7f": "Çalışma alanı panosu sütunlarını yeniden boyutlandır",
           "2df01a03ff": "Eşleşme yok",
           "newWorkspaceIn": "{{status}} durumunda yeni çalışma alanı"
         },

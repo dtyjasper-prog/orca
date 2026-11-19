@@ -19,8 +19,6 @@ export function useWorkspaceKanbanDrawerResize(
   const startXRef = useRef(0)
   const startWidthRef = useRef(0)
   const frameRef = useRef<number | null>(null)
-  const commitRef = useRef(onCommitWidth)
-  commitRef.current = onCommitWidth
 
   const finish = useCallback(() => {
     if (draftRef.current === null) {
@@ -35,8 +33,8 @@ export function useWorkspaceKanbanDrawerResize(
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
     setDraftWidth(null)
-    commitRef.current(width)
-  }, [])
+    onCommitWidth(width)
+  }, [onCommitWidth])
 
   useEffect(() => {
     const handleMove = (event: PointerEvent): void => {
@@ -82,7 +80,7 @@ export function useWorkspaceKanbanDrawerResize(
     document.body.style.userSelect = 'none'
   }, [])
 
-  const onDrawerResizeReset = useCallback(() => commitRef.current(null), [])
+  const onDrawerResizeReset = useCallback(() => onCommitWidth(null), [onCommitWidth])
 
   return {
     drawerWidth: draftWidth ?? committedWidth,
