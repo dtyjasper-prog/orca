@@ -163,3 +163,7 @@ ci-shards/
 /.build/windows-native-benchmark/
 
 .local/static-analysis-research/
+
+# Fork-only docs (dtyjasper-prog/orca)
+!docs/fork/
+!docs/fork/**
