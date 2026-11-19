@@ -1,6 +1,8 @@
 import React from 'react'
 import WorkspaceKanbanAreaSelectionOverlay from '../selection/WorkspaceKanbanAreaSelectionOverlay'
-import WorkspaceKanbanDrawerHeader from './WorkspaceKanbanDrawerHeader'
+import WorkspaceKanbanDrawerHeader, {
+  type WorkspaceBoardSurface
+} from './WorkspaceKanbanDrawerHeader'
 import WorkspaceKanbanLaneGrid from '../viewport/WorkspaceKanbanLaneGrid'
 import WorkspaceKanbanPinDropTarget from '../drag/WorkspaceKanbanPinDropTarget'
 import WorkspaceKanbanSheet from './WorkspaceKanbanSheet'
@@ -25,25 +27,27 @@ type WorkspaceKanbanDrawerViewProps = {
   sidebarOpen: boolean
   sidebarWidth: number
   statusBarVisible: boolean
+  surface: WorkspaceBoardSurface
+}
+
+/** The pop-out window fills its own frame; it keeps the sheet marker so board-scoped selectors still match. */
+function WorkspaceBoardWindowFrame({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <div
+      className="workspace-kanban-sheet-content relative flex h-full min-h-0 w-full flex-col bg-worktree-sidebar"
+      data-workspace-board-sheet=""
+      data-workspace-board-window=""
+    >
+      {children}
+    </div>
+  )
 }
 
 export default function WorkspaceKanbanDrawerView(
   props: WorkspaceKanbanDrawerViewProps
 ): React.JSX.Element {
-  return (
-    <WorkspaceKanbanSheet
-      boardRef={props.boardRef}
-      dragPreview={props.dragPreview}
-      drawerWidth={props.drawerWidth}
-      onDrawerWidthChange={props.onDrawerWidthChange}
-      leftSidebarStyle={props.leftSidebarStyle}
-      onOpenChange={props.onOpenChange}
-      open={props.open}
-      preserveOpenForMenu={props.preserveOpenForMenu}
-      sidebarOpen={props.sidebarOpen}
-      sidebarWidth={props.sidebarWidth}
-      statusBarVisible={props.statusBarVisible}
-    >
+  const content = (
+    <>
       <WorkspaceKanbanDrawerHeader {...props.headerProps} />
       <div
         ref={props.boardRef}
@@ -69,6 +73,26 @@ export default function WorkspaceKanbanDrawerView(
           <WorkspaceKanbanLaneGrid {...props.laneGridProps} />
         </div>
       </div>
+    </>
+  )
+  if (props.surface === 'window') {
+    return <WorkspaceBoardWindowFrame>{content}</WorkspaceBoardWindowFrame>
+  }
+  return (
+    <WorkspaceKanbanSheet
+      boardRef={props.boardRef}
+      dragPreview={props.dragPreview}
+      drawerWidth={props.drawerWidth}
+      onDrawerWidthChange={props.onDrawerWidthChange}
+      leftSidebarStyle={props.leftSidebarStyle}
+      onOpenChange={props.onOpenChange}
+      open={props.open}
+      preserveOpenForMenu={props.preserveOpenForMenu}
+      sidebarOpen={props.sidebarOpen}
+      sidebarWidth={props.sidebarWidth}
+      statusBarVisible={props.statusBarVisible}
+    >
+      {content}
     </WorkspaceKanbanSheet>
   )
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { isEditableTarget } from '@/lib/text-input/focus/editable-target'
 import { useAppStore } from '@/store'
 import { isXtermHelperTextarea } from '../../../terminal-pane/input/focus/regular-terminal-focus-ownership'
+import type { WorkspaceBoardWindowScreenPoint } from '../../../../../../shared/workspace/board-window/workspace-board-window-types'
 
 const WORKSPACE_BOARD_SHEET_SELECTOR = '[data-workspace-board-sheet]'
 
@@ -39,6 +40,14 @@ export type WorkspaceBoardPanelState = {
   previewWorkspaceBoardFromDrag: () => void
   solidifyWorkspaceBoardFromDrag: () => void
   cancelWorkspaceBoardDragPreview: () => void
+  /** While popped out the sidebar drawer stays closed and the trigger focuses the window. */
+  workspaceBoardWindowOpen: boolean
+  /** Absent where the host has no pop-out windows (web, mobile). */
+  popOutWorkspaceBoard: ((at?: WorkspaceBoardWindowScreenPoint) => void) | undefined
+}
+
+function workspaceBoardWindowApi(): typeof window.api.workspaceBoardWindow | undefined {
+  return typeof window === 'undefined' ? undefined : window.api?.workspaceBoardWindow
 }
 
 export function useWorkspaceBoardPanel(): WorkspaceBoardPanelState {
@@ -47,10 +56,16 @@ export function useWorkspaceBoardPanel(): WorkspaceBoardPanelState {
   const [workspaceBoardMenuOpen, setWorkspaceBoardMenuOpen] = useState(false)
   const workspaceBoardOpenRef = useRef(workspaceBoardOpen)
   const workspaceBoardDragPreviewOpenRef = useRef(workspaceBoardDragPreviewOpen)
+  const [workspaceBoardWindowOpen, setWorkspaceBoardWindowOpen] = useState(false)
+  const workspaceBoardWindowOpenRef = useRef(workspaceBoardWindowOpen)
   workspaceBoardOpenRef.current = workspaceBoardOpen
   workspaceBoardDragPreviewOpenRef.current = workspaceBoardDragPreviewOpen
 
   const openWorkspaceBoard = useCallback(() => {
+    if (workspaceBoardWindowOpenRef.current) {
+      void workspaceBoardWindowApi()?.open()
+      return
+    }
     if (workspaceBoardOpenRef.current) {
       if (workspaceBoardDragPreviewOpenRef.current) {
         workspaceBoardDragPreviewOpenRef.current = false
@@ -94,7 +109,11 @@ export function useWorkspaceBoardPanel(): WorkspaceBoardPanelState {
   }, [closeWorkspaceBoard, openWorkspaceBoard])
 
   const previewWorkspaceBoardFromDrag = useCallback(() => {
-    if (workspaceBoardOpenRef.current || workspaceBoardDragPreviewOpenRef.current) {
+    if (
+      workspaceBoardWindowOpenRef.current ||
+      workspaceBoardOpenRef.current ||
+      workspaceBoardDragPreviewOpenRef.current
+    ) {
       return
     }
     workspaceBoardDragPreviewOpenRef.current = true
@@ -102,6 +121,9 @@ export function useWorkspaceBoardPanel(): WorkspaceBoardPanelState {
   }, [])
 
   const solidifyWorkspaceBoardFromDrag = useCallback(() => {
+    if (workspaceBoardWindowOpenRef.current) {
+      return
+    }
     if (workspaceBoardOpenRef.current) {
       if (workspaceBoardDragPreviewOpenRef.current) {
         workspaceBoardDragPreviewOpenRef.current = false
@@ -157,13 +179,50 @@ export function useWorkspaceBoardPanel(): WorkspaceBoardPanelState {
   }, [closeWorkspaceBoard, workspaceBoardMenuOpen, workspaceBoardOpen])
 
   useEffect(() => {
+    const api = workspaceBoardWindowApi()
+    if (!api) {
+      return
+    }
+    const applyWindowOpen = (open: boolean): void => {
+      workspaceBoardWindowOpenRef.current = open
+      setWorkspaceBoardWindowOpen(open)
+    }
+    const offOpenChanged = api.onOpenChanged(applyWindowOpen)
+    const offDocked = api.onDocked(() => {
+      applyWindowOpen(false)
+      openWorkspaceBoard()
+    })
+    void api.isOpen().then(applyWindowOpen, () => {})
+    return () => {
+      offOpenChanged()
+      offDocked()
+    }
+  }, [openWorkspaceBoard])
+
+  const popOutWorkspaceBoard = useCallback(
+    (at?: WorkspaceBoardWindowScreenPoint) => {
+      const api = workspaceBoardWindowApi()
+      if (!api) {
+        return
+      }
+      closeWorkspaceBoard()
+      workspaceBoardWindowOpenRef.current = true
+      setWorkspaceBoardWindowOpen(true)
+      useAppStore.getState().recordFeatureInteraction('workspace-board')
+      void api.open(at)
+    },
+    [closeWorkspaceBoard]
+  )
+
+  useEffect(() => {
     window.addEventListener(TOGGLE_WORKSPACE_BOARD_EVENT, toggleWorkspaceBoard)
     return () => window.removeEventListener(TOGGLE_WORKSPACE_BOARD_EVENT, toggleWorkspaceBoard)
   }, [toggleWorkspaceBoard])
 
   return {
     workspaceBoardOpen,
-    workspaceBoardRenderedOpen: workspaceBoardOpen || workspaceBoardDragPreviewOpen,
+    workspaceBoardRenderedOpen:
+      !workspaceBoardWindowOpen && (workspaceBoardOpen || workspaceBoardDragPreviewOpen),
     workspaceBoardDragPreviewOpen: workspaceBoardDragPreviewOpen && !workspaceBoardOpen,
     workspaceBoardMenuOpen,
     openWorkspaceBoard,
@@ -173,6 +232,8 @@ export function useWorkspaceBoardPanel(): WorkspaceBoardPanelState {
     setWorkspaceBoardMenuOpen,
     previewWorkspaceBoardFromDrag,
     solidifyWorkspaceBoardFromDrag,
-    cancelWorkspaceBoardDragPreview
+    cancelWorkspaceBoardDragPreview,
+    workspaceBoardWindowOpen,
+    popOutWorkspaceBoard: workspaceBoardWindowApi() ? popOutWorkspaceBoard : undefined
   }
 }

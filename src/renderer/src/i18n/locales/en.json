@@ -7588,7 +7588,11 @@
           "e1a34450fc": "Organize workspaces by status and open workspace cards.",
           "c6a77ab0f4": "Workspace board",
           "selectedCount_one": "{{count}} selected",
-          "selectedCount_other": "{{count}} selected"
+          "selectedCount_other": "{{count}} selected",
+          "popOut": "Open in new window",
+          "dock": "Move back to sidebar",
+          "unpinWindow": "Stop keeping on top",
+          "pinWindow": "Keep on top"
         },
         "WorkspaceKanbanPinDropTarget": {
           "c30151c5ee": "Drop here to pin without changing status.",
@@ -26138,7 +26142,8 @@
       "importGhosttyConfig": "Import Ghostty Config",
       "importKittyConfig": "Import Kitty Config",
       "pickAppIcon": "Choose app icon",
-      "appIconImage": "App icon image"
+      "appIconImage": "App icon image",
+      "workspaceBoardTitle": "Orca Workspace Board"
     }
   },
   "taskProviders": {
@@ -29296,5 +29301,11 @@
     "suggestionUse": "Use",
     "browseOnline": "Browse",
     "browseOnlineLabel": "Browse community translations on orca.dev (opens in your browser)"
+  },
+  "workspaceBoard": {
+    "window": {
+      "errorTitle": "Workspace board hit an error.",
+      "errorDescription": "Close and reopen the window to try again."
+    }
   }
 }

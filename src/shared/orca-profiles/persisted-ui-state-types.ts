@@ -254,6 +254,11 @@ export type PersistedUIState = {
   windowFullScreen?: boolean
   /** Dashboard popout bounds, independent of main-window bounds. */
   dashboardPopoutBounds?: { x: number; y: number; width: number; height: number } | null
+  /** Pop-out workspace board bounds, independent of main-window bounds. */
+  workspaceBoardWindowBounds?: { x: number; y: number; width: number; height: number } | null
+  workspaceBoardWindowAlwaysOnTop?: boolean
+  /** Reopen the pop-out board on launch when it was open at quit. */
+  workspaceBoardWindowOpen?: boolean
   /** Migrate legacy recent→smart once so later activity-based recent selections survive. */
   _sortBySmartMigrated?: boolean
   /** Rollback field only: every load stamps it, so it cannot gate migration; use _inlineAgentsDefaultedForAllUsers. */

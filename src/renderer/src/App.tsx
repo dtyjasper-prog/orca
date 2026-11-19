@@ -39,6 +39,7 @@ import { usePersistedUIWriter } from './app-shell/storage/use-persisted-ui-write
 import { useRuntimeGraphSync } from './runtime/sync-runtime-graph/use-runtime-graph-sync'
 import { useWindowVisibilityEffects } from './app-shell/chrome/use-window-visibility-effects'
 import { SpaceWindowStatePublisher } from './components/workspace-space/SpaceWindowStatePublisher'
+import { WorkspaceBoardWindowStatePublisher } from './components/sidebar/workspace-board/window/WorkspaceBoardWindowStatePublisher'
 import { PlainSshTerminalPanels } from './components/plain-ssh-terminal/PlainSshTerminalPanels'
 import { PluginShotReplayMount } from './components/plugins/view/PluginShotReplayMount'
 import { AddToChatPointMenuHost } from './components/native-chat/selection-quotes/AddToChatMenu'
@@ -110,6 +111,7 @@ function App(): React.JSX.Element {
           <LinkRoutingPreferenceDialogProvider>
             <AppBackgroundServices />
             <SpaceWindowStatePublisher />
+            <WorkspaceBoardWindowStatePublisher />
             <AppWorkspaceShell layout={layout} floatingWorkspace={floatingWorkspace} />
             <AppRootSurfaces
               floatingWorkspace={floatingWorkspace}

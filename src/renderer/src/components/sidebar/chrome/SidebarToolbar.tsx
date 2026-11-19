@@ -8,6 +8,8 @@ import { SidebarSettingsHelpMenu } from './SidebarSettingsHelpMenu'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store'
 import { hasFeatureInteraction } from '../../../../../shared/feature-education/interactions/feature-interactions'
+import type { WorkspaceBoardWindowScreenPoint } from '../../../../../shared/workspace/board-window/workspace-board-window-types'
+import { useWorkspaceBoardDragOut } from '../workspace-board/window/use-workspace-board-drag-out'
 
 const WORKSPACE_BOARD_MOVED_HINT_STORAGE_KEY = 'orca.workspaceBoardMovedHintSeen.v1'
 const WORKSPACE_BOARD_MOVED_HINT_DURATION_MS = 12000
@@ -16,12 +18,15 @@ type SidebarToolbarProps = {
   workspaceBoardOpen: boolean
   workspaceBoardDragPreviewOpen?: boolean
   onWorkspaceBoardToggle: () => void
+  /** Dragging the trigger out of the window pops the board out there. */
+  onWorkspaceBoardPopOut?: (at?: WorkspaceBoardWindowScreenPoint) => void
 }
 
 const SidebarToolbar = React.memo(function SidebarToolbar({
   workspaceBoardOpen,
   workspaceBoardDragPreviewOpen = false,
-  onWorkspaceBoardToggle
+  onWorkspaceBoardToggle,
+  onWorkspaceBoardPopOut
 }: SidebarToolbarProps) {
   const t = useTranslate()
   // Subscribe across this memo boundary so asynchronously applied locale changes relabel the toolbar and its children.
@@ -60,7 +65,14 @@ const SidebarToolbar = React.memo(function SidebarToolbar({
     return () => window.clearTimeout(timeoutId)
   }, [hasUsedWorkspaceBoard, persistedUIReady])
 
+  const workspaceBoardDragOut = useWorkspaceBoardDragOut(onWorkspaceBoardPopOut, {
+    allowInteractiveTarget: true
+  })
+
   const handleWorkspaceBoardClick = (): void => {
+    if (workspaceBoardDragOut.isDraggingRef.current) {
+      return
+    }
     setWorkspaceBoardMovedHintOpen(false)
     onWorkspaceBoardToggle()
   }
@@ -89,6 +101,7 @@ const SidebarToolbar = React.memo(function SidebarToolbar({
                 data-workspace-board-trigger=""
                 data-workspace-board-preview={workspaceBoardDragPreviewOpen ? 'true' : undefined}
                 onClick={handleWorkspaceBoardClick}
+                onPointerDown={workspaceBoardDragOut.onPointerDown}
                 className="text-muted-foreground"
               >
                 <Kanban className="size-3.5" />

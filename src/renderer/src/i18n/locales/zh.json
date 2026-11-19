@@ -6379,7 +6379,11 @@
           "f369f5c5a3": "关闭",
           "e1a34450fc": "按状态组织工作区并打开工作区卡",
           "c6a77ab0f4": "工作区板",
-          "selectedCount_other": "已选择 {{count}} 项"
+          "selectedCount_other": "已选择 {{count}} 项",
+          "popOut": "在新窗口打开",
+          "dock": "放回侧栏",
+          "unpinWindow": "取消置顶",
+          "pinWindow": "置顶"
         },
         "WorkspaceKanbanPinDropTarget": {
           "c30151c5ee": "拖放到此处即可固定，无需更改状态",
@@ -24708,7 +24712,8 @@
       "importGhosttyConfig": "导入 Ghostty 配置",
       "importKittyConfig": "导入 Kitty 配置",
       "pickAppIcon": "选择应用程序图标",
-      "appIconImage": "应用程序图标图片"
+      "appIconImage": "应用程序图标图片",
+      "workspaceBoardTitle": "Orca 工作区板"
     }
   },
   "taskProviders": {
@@ -25696,5 +25701,11 @@
     "includeRecentLogsRedacted": "包含近期日志（已脱敏）",
     "details": "详情",
     "sending": "正在发送…"
+  },
+  "workspaceBoard": {
+    "window": {
+      "errorTitle": "工作区板出错了。",
+      "errorDescription": "关掉窗口再重新打开试试。"
+    }
   }
 }

@@ -17,6 +17,8 @@ import type { Worktree } from '../../../../../../shared/worktree/types'
 import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
 import WorkspaceKanbanDrawerView from './WorkspaceKanbanDrawerView'
+import type { WorkspaceBoardSurface } from './WorkspaceKanbanDrawerHeader'
+import type { WorkspaceBoardWindowScreenPoint } from '../../../../../../shared/workspace/board-window/workspace-board-window-types'
 import { useWorkspaceKanbanBoardProjection } from '../projection/use-workspace-kanban-board-projection'
 import { useWorkspaceKanbanNativeDrag } from '../drag/use-workspace-kanban-native-drag'
 import { useWorkspaceKanbanRenderLifecycle } from './use-workspace-kanban-render-lifecycle'
@@ -39,6 +41,12 @@ type WorkspaceKanbanDrawerProps = {
   preserveOpenForMenu: boolean
   onOpenChange: (open: boolean) => void
   onMenuOpenChange: (open: boolean) => void
+  surface?: WorkspaceBoardSurface
+  /** Replaces the header's close; the pop-out window docks back instead. */
+  onHeaderClose?: () => void
+  onPopOut?: (at?: WorkspaceBoardWindowScreenPoint) => void
+  alwaysOnTop?: boolean
+  onAlwaysOnTopChange?: (alwaysOnTop: boolean) => void
 }
 
 export default function WorkspaceKanbanDrawer(
@@ -59,7 +67,12 @@ function WorkspaceKanbanDrawerContent({
   dragPreview,
   preserveOpenForMenu,
   onOpenChange,
-  onMenuOpenChange
+  onMenuOpenChange,
+  surface = 'drawer',
+  onHeaderClose,
+  onPopOut,
+  alwaysOnTop,
+  onAlwaysOnTopChange
 }: WorkspaceKanbanDrawerProps): React.JSX.Element {
   const allWorktrees = useAllWorktrees()
   const folderWorkspaces = useAppStore((s) => selectFolderWorkspaces(s))
@@ -232,9 +245,13 @@ function WorkspaceKanbanDrawerContent({
     onOpenChange(false)
   }, [onOpenChange])
   const handleHeaderClose = useCallback(() => {
+    if (onHeaderClose) {
+      onHeaderClose()
+      return
+    }
     // Only the board’s own close paths bypass its explicit drag/outside-dismiss rules.
     onOpenChange(false)
-  }, [onOpenChange])
+  }, [onHeaderClose, onOpenChange])
   const {
     handleRenameStatus,
     handleChangeStatusColor,
@@ -292,7 +309,12 @@ function WorkspaceKanbanDrawerContent({
       sidebarOpen={sidebarOpen}
       sidebarWidth={sidebarWidth}
       statusBarVisible={statusBarVisible}
+      surface={surface}
       headerProps={{
+        surface,
+        onPopOut,
+        alwaysOnTop,
+        onAlwaysOnTopChange,
         selectedCount: renderedSelectedWorktrees.length,
         query,
         isFiltering: hasQuery,

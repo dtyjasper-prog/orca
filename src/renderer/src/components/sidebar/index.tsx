@@ -134,7 +134,9 @@ function Sidebar({
     closeWorkspaceBoard,
     previewWorkspaceBoardFromDrag,
     solidifyWorkspaceBoardFromDrag,
-    cancelWorkspaceBoardDragPreview
+    cancelWorkspaceBoardDragPreview,
+    workspaceBoardWindowOpen,
+    popOutWorkspaceBoard
   } = useWorkspaceBoardPanel()
 
   const repoCount = repos.length
@@ -268,9 +270,10 @@ function Sidebar({
                 <SetupScriptPromptCard />
 
                 <SidebarToolbar
-                  workspaceBoardOpen={workspaceBoardOpen}
+                  workspaceBoardOpen={workspaceBoardOpen || workspaceBoardWindowOpen}
                   workspaceBoardDragPreviewOpen={workspaceBoardDragPreviewOpen}
                   onWorkspaceBoardToggle={toggleWorkspaceBoard}
+                  onWorkspaceBoardPopOut={popOutWorkspaceBoard}
                 />
               </div>
             </>
@@ -335,6 +338,7 @@ function Sidebar({
           preserveOpenForMenu={workspaceBoardMenuOpen}
           onOpenChange={handleWorkspaceBoardOpenChange}
           onMenuOpenChange={setWorkspaceBoardMenuOpen}
+          onPopOut={popOutWorkspaceBoard}
         />
       ) : null}
       {showAgentDashboard ? (

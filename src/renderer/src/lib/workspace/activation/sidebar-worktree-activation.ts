@@ -9,6 +9,7 @@ import type { ExecutionHostId } from '../../../../../shared/execution-host/execu
 import type { EphemeralVmWorkspaceLifecycleResult } from '../../../../../shared/remote-runtime/ephemeral-vm-store/ephemeral-vm-runtimes'
 import { ephemeralVmErrorText } from '@/runtime/ephemeral-vm/ephemeral-vm-error-copy'
 import { ephemeralVmFailureFromError } from '../../../../../shared/remote-runtime/ephemeral-vm-recipes/ephemeral-vm-failure-copy'
+import { isWorkspaceBoardWindowSurface } from './workspace-board-window-surface'
 
 /** Coded failures render through the catalog; a thrown IPC error only has its message. */
 async function settleLifecycleCall(
@@ -26,6 +27,11 @@ export async function activateWorktreeFromSidebar(
   executionHostId?: ExecutionHostId,
   options?: { revealInSidebar?: boolean }
 ): Promise<void> {
+  // The pop-out board has no terminals; the main window opens the workspace.
+  if (isWorkspaceBoardWindowSurface()) {
+    await window.api.workspaceBoardWindow.revealWorktree(worktreeId, executionHostId)
+    return
+  }
   const workspaceScope = parseWorkspaceKey(worktreeId)
   if (workspaceScope?.type === 'folder') {
     activateAndRevealFolderWorkspace(workspaceScope.folderWorkspaceId, {

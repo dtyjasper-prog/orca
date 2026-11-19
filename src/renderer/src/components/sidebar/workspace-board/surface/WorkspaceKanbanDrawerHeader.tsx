@@ -1,5 +1,5 @@
 import React from 'react'
-import { X } from 'lucide-react'
+import { PanelLeft, PictureInPicture2, Pin, PinOff, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type { WorkspaceStatusDefinition } from '../../../../../../shared/worktree/types'
@@ -7,6 +7,56 @@ import SidebarFilter from '../../worktree-list/controls/SidebarFilter'
 import WorkspaceKanbanSearchField from '../search/WorkspaceKanbanSearchField'
 import WorkspaceKanbanSettingsMenu from './WorkspaceKanbanSettingsMenu'
 import { useTranslate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import type { WorkspaceBoardWindowScreenPoint } from '../../../../../../shared/workspace/board-window/workspace-board-window-types'
+import { useWorkspaceBoardDragOut } from '../window/use-workspace-board-drag-out'
+
+export type WorkspaceBoardSurface = 'drawer' | 'window'
+
+type HeaderIconButtonProps = {
+  label: string
+  pressed?: boolean
+  onClick: () => void
+  children: React.ReactNode
+}
+
+function HeaderIconButton({
+  label,
+  pressed,
+  onClick,
+  children
+}: HeaderIconButtonProps): React.JSX.Element {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant={pressed ? 'secondary' : 'ghost'}
+          size="icon-xs"
+          aria-label={label}
+          aria-pressed={pressed}
+          onClick={onClick}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={4}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+// Sheet title parts need the drawer's dialog context; the pop-out window has none.
+function WindowHeader({ className, ...props }: React.ComponentProps<'div'>): React.JSX.Element {
+  return <div className={cn('flex flex-col gap-1.5 p-4', className)} {...props} />
+}
+function WindowTitle({ className, ...props }: React.ComponentProps<'h2'>): React.JSX.Element {
+  return <h2 className={cn('text-base font-semibold text-foreground', className)} {...props} />
+}
+function WindowDescription({ className, ...props }: React.ComponentProps<'p'>): React.JSX.Element {
+  return <p className={cn('text-sm text-muted-foreground', className)} {...props} />
+}
 
 type WorkspaceKanbanDrawerHeaderProps = {
   selectedCount: number
@@ -28,6 +78,11 @@ type WorkspaceKanbanDrawerHeaderProps = {
   onAddStatus: () => void
   onFilterMenuOpenChange: (open: boolean) => void
   onClose: () => void
+  surface: WorkspaceBoardSurface
+  /** Drawer only; absent where pop-out windows are unavailable (web, mobile). */
+  onPopOut?: (at?: WorkspaceBoardWindowScreenPoint) => void
+  alwaysOnTop?: boolean
+  onAlwaysOnTopChange?: (alwaysOnTop: boolean) => void
 }
 
 export default function WorkspaceKanbanDrawerHeader({
@@ -49,15 +104,44 @@ export default function WorkspaceKanbanDrawerHeader({
   onRemoveStatus,
   onAddStatus,
   onFilterMenuOpenChange,
-  onClose
+  onClose,
+  surface,
+  onPopOut,
+  alwaysOnTop = false,
+  onAlwaysOnTopChange
 }: WorkspaceKanbanDrawerHeaderProps): React.JSX.Element {
   const t = useTranslate()
+  const isWindow = surface === 'window'
+  const Header = isWindow ? WindowHeader : SheetHeader
+  const Title = isWindow ? WindowTitle : SheetTitle
+  const Description = isWindow ? WindowDescription : SheetDescription
+  const dragOut = useWorkspaceBoardDragOut(isWindow ? undefined : onPopOut)
+  const popOutLabel = t(
+    'auto.components.sidebar.WorkspaceKanbanDrawerHeader.popOut',
+    'Open in new window'
+  )
+  const dockLabel = t(
+    'auto.components.sidebar.WorkspaceKanbanDrawerHeader.dock',
+    'Move back to sidebar'
+  )
+  const alwaysOnTopLabel = alwaysOnTop
+    ? t('auto.components.sidebar.WorkspaceKanbanDrawerHeader.unpinWindow', 'Stop keeping on top')
+    : t('auto.components.sidebar.WorkspaceKanbanDrawerHeader.pinWindow', 'Keep on top')
+  const rightActionsWidth = isWindow || onPopOut ? 'pr-40' : 'pr-32'
   return (
     <>
-      <SheetHeader className="border-b border-worktree-sidebar-border px-4 py-3 pr-32">
+      <Header
+        className={cn(
+          'border-b border-worktree-sidebar-border px-4 py-3',
+          rightActionsWidth,
+          !isWindow && onPopOut && 'cursor-grab'
+        )}
+        data-workspace-board-header=""
+        onPointerDown={dragOut.onPointerDown}
+      >
         {/* SheetTitle renders the aria-labelledby h2; the input must be its sibling for valid markup. */}
         <div className="flex items-center gap-2">
-          <SheetTitle className="flex shrink-0 items-center gap-2 text-sm">
+          <Title className="flex shrink-0 items-center gap-2 text-sm">
             <span>
               {t(
                 'auto.components.sidebar.WorkspaceKanbanDrawerHeader.c6a77ab0f4',
@@ -73,7 +157,7 @@ export default function WorkspaceKanbanDrawerHeader({
                 )}
               </span>
             ) : null}
-          </SheetTitle>
+          </Title>
           <WorkspaceKanbanSearchField
             query={query}
             isFiltering={isFiltering}
@@ -85,13 +169,13 @@ export default function WorkspaceKanbanDrawerHeader({
             onClose={onClose}
           />
         </div>
-        <SheetDescription className="sr-only">
+        <Description className="sr-only">
           {t(
             'auto.components.sidebar.WorkspaceKanbanDrawerHeader.e1a34450fc',
             'Organize workspaces by status and open workspace cards.'
           )}
-        </SheetDescription>
-      </SheetHeader>
+        </Description>
+      </Header>
 
       <div className="absolute right-3 top-2.5 flex items-center gap-1">
         <SidebarFilter
@@ -111,14 +195,37 @@ export default function WorkspaceKanbanDrawerHeader({
           onRemoveStatus={onRemoveStatus}
           onAddStatus={onAddStatus}
         />
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t('auto.components.sidebar.WorkspaceKanbanDrawerHeader.f369f5c5a3', 'Close')}
-          onClick={onClose}
-        >
-          <X className="size-3.5" />
-        </Button>
+        {isWindow && onAlwaysOnTopChange ? (
+          <HeaderIconButton
+            label={alwaysOnTopLabel}
+            pressed={alwaysOnTop}
+            onClick={() => onAlwaysOnTopChange(!alwaysOnTop)}
+          >
+            {alwaysOnTop ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+          </HeaderIconButton>
+        ) : null}
+        {!isWindow && onPopOut ? (
+          <HeaderIconButton label={popOutLabel} onClick={() => onPopOut()}>
+            <PictureInPicture2 className="size-3.5" />
+          </HeaderIconButton>
+        ) : null}
+        {isWindow ? (
+          <HeaderIconButton label={dockLabel} onClick={onClose}>
+            <PanelLeft className="size-3.5" />
+          </HeaderIconButton>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t(
+              'auto.components.sidebar.WorkspaceKanbanDrawerHeader.f369f5c5a3',
+              'Close'
+            )}
+            onClick={onClose}
+          >
+            <X className="size-3.5" />
+          </Button>
+        )}
       </div>
     </>
   )
