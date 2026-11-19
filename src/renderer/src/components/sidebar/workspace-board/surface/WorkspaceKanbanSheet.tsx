@@ -105,10 +105,7 @@ export default function WorkspaceKanbanSheet({
         side="left"
         showCloseButton={false}
         ref={trackSidebarLiveWidth}
-        className={cn(
-          'workspace-kanban-sheet-content bg-worktree-sidebar p-0 sm:max-w-none',
-          drawerHeight !== null && 'border-b border-worktree-sidebar-border'
-        )}
+        className="workspace-kanban-sheet-content bg-worktree-sidebar p-0 sm:max-w-none"
         overlayStyle={{
           top: WORKSPACE_TOP_CHROME_HEIGHT,
           bottom: drawerBottom,
