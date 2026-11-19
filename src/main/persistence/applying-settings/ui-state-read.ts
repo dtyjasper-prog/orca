@@ -12,6 +12,7 @@ import {
 import {
   normalizeWorkspaceBoardCollapsedColumns,
   normalizeWorkspaceBoardColumnWidths,
+  normalizeWorkspaceBoardDrawerHeight,
   normalizeWorkspaceBoardDrawerWidth
 } from '../../../shared/workspace/status/workspace-board-layout'
 import { normalizeUsagePercentageDisplay } from '../../../shared/agent-usage/display/usage-percentage-display'
@@ -70,6 +71,9 @@ export function getPersistedUI(
     ),
     workspaceBoardDrawerWidth: normalizeWorkspaceBoardDrawerWidth(
       state.ui?.workspaceBoardDrawerWidth
+    ),
+    workspaceBoardDrawerHeight: normalizeWorkspaceBoardDrawerHeight(
+      state.ui?.workspaceBoardDrawerHeight
     ),
     sidebarBotsHeight: normalizeSidebarBotsHeight(state.ui?.sidebarBotsHeight) ?? undefined,
     syncTaskStatusFromWorkspaceBoard: state.ui?.syncTaskStatusFromWorkspaceBoard === true,

@@ -97,6 +97,8 @@ function WorkspaceKanbanDrawerContent({
   const workspaceBoardCollapsedColumns = useAppStore((s) => s.workspaceBoardCollapsedColumns)
   const workspaceBoardDrawerWidth = useAppStore((s) => s.workspaceBoardDrawerWidth)
   const setWorkspaceBoardDrawerWidth = useAppStore((s) => s.setWorkspaceBoardDrawerWidth)
+  const workspaceBoardDrawerHeight = useAppStore((s) => s.workspaceBoardDrawerHeight)
+  const setWorkspaceBoardDrawerHeight = useAppStore((s) => s.setWorkspaceBoardDrawerHeight)
   const toggleWorkspaceBoardColumnCollapsed = useAppStore(
     (s) => s.toggleWorkspaceBoardColumnCollapsed
   )
@@ -297,6 +299,8 @@ function WorkspaceKanbanDrawerContent({
       dragPreview={dragPreview}
       drawerWidth={workspaceBoardDrawerWidth}
       onDrawerWidthChange={setWorkspaceBoardDrawerWidth}
+      drawerHeight={workspaceBoardDrawerHeight}
+      onDrawerHeightChange={setWorkspaceBoardDrawerHeight}
       leftSidebarStyle={leftSidebarStyle}
       onAreaSelectionPointerDown={handleAreaSelectionPointerDown}
       onCardPointerDownCapture={onCardPointerDownCapture}

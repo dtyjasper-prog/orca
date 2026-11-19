@@ -128,6 +128,7 @@ export const UI_STATE_GLOBAL_FIELDS = [
   'workspaceBoardColumnWidths',
   'workspaceBoardCollapsedColumns',
   'workspaceBoardDrawerWidth',
+  'workspaceBoardDrawerHeight',
   'sidebarBotsHeight',
   'syncTaskStatusFromWorkspaceBoard',
   'statusBarItems',

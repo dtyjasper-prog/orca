@@ -1,30 +1,53 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type React from 'react'
-import { normalizeWorkspaceBoardDrawerWidth } from '../../../../../../shared/workspace/status/workspace-board-layout'
+import {
+  normalizeWorkspaceBoardDrawerHeight,
+  normalizeWorkspaceBoardDrawerWidth
+} from '../../../../../../shared/workspace/status/workspace-board-layout'
+
+/** 'width' drags the drawer's right edge; 'height' drags its bottom edge. */
+export type WorkspaceKanbanDrawerResizeAxis = 'width' | 'height'
 
 type UseWorkspaceKanbanDrawerResizeResult = {
-  /** Committed width, or the in-flight drag width; null keeps the default. */
-  drawerWidth: number | null
-  isResizingDrawer: boolean
-  onDrawerResizeStart: (event: React.PointerEvent<HTMLElement>) => void
-  onDrawerResizeReset: () => void
+  /** Committed size, or the in-flight drag size; null keeps the default. */
+  size: number | null
+  isResizing: boolean
+  onResizeStart: (event: React.PointerEvent<HTMLElement>) => void
+  onResizeReset: () => void
 }
 
+const AXES = {
+  width: {
+    normalize: normalizeWorkspaceBoardDrawerWidth,
+    pointer: (event: { clientX: number }) => event.clientX,
+    measure: (rect: DOMRect) => rect.width,
+    cursor: 'col-resize'
+  },
+  height: {
+    normalize: normalizeWorkspaceBoardDrawerHeight,
+    pointer: (event: { clientY: number }) => event.clientY,
+    measure: (rect: DOMRect) => rect.height,
+    cursor: 'row-resize'
+  }
+} as const
+
 export function useWorkspaceKanbanDrawerResize(
-  committedWidth: number | null,
-  onCommitWidth: (width: number | null) => void
+  axis: WorkspaceKanbanDrawerResizeAxis,
+  committedSize: number | null,
+  onCommitSize: (size: number | null) => void
 ): UseWorkspaceKanbanDrawerResizeResult {
-  const [draftWidth, setDraftWidth] = useState<number | null>(null)
+  const [draftSize, setDraftSize] = useState<number | null>(null)
   const draftRef = useRef<number | null>(null)
-  const startXRef = useRef(0)
-  const startWidthRef = useRef(0)
+  const startPointerRef = useRef(0)
+  const startSizeRef = useRef(0)
   const frameRef = useRef<number | null>(null)
+  const config = AXES[axis]
 
   const finish = useCallback(() => {
     if (draftRef.current === null) {
       return
     }
-    const width = draftRef.current
+    const size = draftRef.current
     draftRef.current = null
     if (frameRef.current !== null) {
       cancelAnimationFrame(frameRef.current)
@@ -32,9 +55,9 @@ export function useWorkspaceKanbanDrawerResize(
     }
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
-    setDraftWidth(null)
-    onCommitWidth(width)
-  }, [onCommitWidth])
+    setDraftSize(null)
+    onCommitSize(size)
+  }, [onCommitSize])
 
   useEffect(() => {
     const handleMove = (event: PointerEvent): void => {
@@ -42,13 +65,12 @@ export function useWorkspaceKanbanDrawerResize(
         return
       }
       draftRef.current =
-        normalizeWorkspaceBoardDrawerWidth(
-          startWidthRef.current + event.clientX - startXRef.current
-        ) ?? draftRef.current
+        config.normalize(startSizeRef.current + config.pointer(event) - startPointerRef.current) ??
+        draftRef.current
       if (frameRef.current === null) {
         frameRef.current = window.requestAnimationFrame(() => {
           frameRef.current = null
-          setDraftWidth(draftRef.current)
+          setDraftSize(draftRef.current)
         })
       }
     }
@@ -62,30 +84,33 @@ export function useWorkspaceKanbanDrawerResize(
       window.removeEventListener('pointercancel', finish)
       window.removeEventListener('blur', finish)
     }
-  }, [finish])
+  }, [config, finish])
 
-  const onDrawerResizeStart = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    if (event.button !== 0) {
-      return
-    }
-    event.preventDefault()
-    event.stopPropagation()
-    const sheet = event.currentTarget.closest<HTMLElement>('[data-slot="sheet-content"]')
-    const width = Math.round(sheet?.getBoundingClientRect().width ?? 0)
-    startXRef.current = event.clientX
-    startWidthRef.current = width
-    draftRef.current = normalizeWorkspaceBoardDrawerWidth(width)
-    setDraftWidth(draftRef.current)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }, [])
+  const onResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      if (event.button !== 0) {
+        return
+      }
+      event.preventDefault()
+      event.stopPropagation()
+      const sheet = event.currentTarget.closest<HTMLElement>('[data-slot="sheet-content"]')
+      const size = Math.round(sheet ? config.measure(sheet.getBoundingClientRect()) : 0)
+      startPointerRef.current = config.pointer(event)
+      startSizeRef.current = size
+      draftRef.current = config.normalize(size)
+      setDraftSize(draftRef.current)
+      document.body.style.cursor = config.cursor
+      document.body.style.userSelect = 'none'
+    },
+    [config]
+  )
 
-  const onDrawerResizeReset = useCallback(() => onCommitWidth(null), [onCommitWidth])
+  const onResizeReset = useCallback(() => onCommitSize(null), [onCommitSize])
 
   return {
-    drawerWidth: draftWidth ?? committedWidth,
-    isResizingDrawer: draftWidth !== null,
-    onDrawerResizeStart,
-    onDrawerResizeReset
+    size: draftSize ?? committedSize,
+    isResizing: draftSize !== null,
+    onResizeStart,
+    onResizeReset
   }
 }

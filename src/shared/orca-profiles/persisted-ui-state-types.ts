@@ -138,6 +138,8 @@ export type PersistedUIState = {
   workspaceBoardCollapsedColumns?: string[]
   /** Dragged in-window drawer width in px; absent or null keeps the default width. */
   workspaceBoardDrawerWidth?: number | null
+  /** Dragged in-window drawer height in px; absent or null keeps the full height. */
+  workspaceBoardDrawerHeight?: number | null
   /** Dragged cap on the sidebar Bots section in px; absent or null keeps the default 40% cap. */
   sidebarBotsHeight?: number | null
   syncTaskStatusFromWorkspaceBoard?: boolean

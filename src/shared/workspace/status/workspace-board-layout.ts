@@ -3,6 +3,8 @@ import { clampWorkspaceBoardColumnWidth } from './workspace-statuses'
 export const WORKSPACE_BOARD_COLLAPSED_COLUMN_WIDTH = 40
 export const WORKSPACE_BOARD_DRAWER_WIDTH_MIN = 480
 export const WORKSPACE_BOARD_DRAWER_WIDTH_MAX = 8192
+export const WORKSPACE_BOARD_DRAWER_HEIGHT_MIN = 320
+export const WORKSPACE_BOARD_DRAWER_HEIGHT_MAX = 8192
 const MAX_PER_COLUMN_ENTRIES = 64
 
 export type WorkspaceBoardColumnWidths = Readonly<Record<string, number>>
@@ -37,6 +39,17 @@ export function normalizeWorkspaceBoardDrawerWidth(value: unknown): number | nul
   return Math.min(
     WORKSPACE_BOARD_DRAWER_WIDTH_MAX,
     Math.max(WORKSPACE_BOARD_DRAWER_WIDTH_MIN, Math.round(value))
+  )
+}
+
+/** null keeps the drawer's full height, from the top chrome down to the status bar. */
+export function normalizeWorkspaceBoardDrawerHeight(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null
+  }
+  return Math.min(
+    WORKSPACE_BOARD_DRAWER_HEIGHT_MAX,
+    Math.max(WORKSPACE_BOARD_DRAWER_HEIGHT_MIN, Math.round(value))
   )
 }
 

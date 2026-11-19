@@ -136,6 +136,9 @@ export type UISlicePreferences = {
   /** Dragged in-window drawer width; null keeps the default. */
   workspaceBoardDrawerWidth: number | null
   setWorkspaceBoardDrawerWidth: (width: number | null) => void
+  /** Dragged in-window drawer height; null keeps the full height. */
+  workspaceBoardDrawerHeight: number | null
+  setWorkspaceBoardDrawerHeight: (height: number | null) => void
   /** Dragged cap on the sidebar Bots section; null keeps the default 40% cap. */
   sidebarBotsHeight: number | null
   setSidebarBotsHeight: (height: number | null) => void

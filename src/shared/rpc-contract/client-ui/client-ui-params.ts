@@ -198,6 +198,7 @@ export const UiUpdateFields = z
     workspaceBoardColumnWidths: z.record(z.string(), z.number().finite()).optional(),
     workspaceBoardCollapsedColumns: StringArray.optional(),
     workspaceBoardDrawerWidth: z.number().finite().nullable().optional(),
+    workspaceBoardDrawerHeight: z.number().finite().nullable().optional(),
     sidebarBotsHeight: z.number().finite().nullable().optional(),
     syncTaskStatusFromWorkspaceBoard: z.boolean().optional(),
     _workspaceStatusesDefaultOrderMigrated: z.boolean().optional(),

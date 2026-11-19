@@ -7369,7 +7369,8 @@
         },
         "projectOrderSaveFailed": "无法保存完整的项目顺序",
         "WorkspaceKanbanSheet": {
-          "resizeBoard": "调整工作区板宽度，双击恢复默认"
+          "resizeBoard": "调整工作区板宽度，双击恢复默认",
+          "resizeBoardHeight": "调整工作区板高度，双击恢复默认"
         }
       },
       "shared": {

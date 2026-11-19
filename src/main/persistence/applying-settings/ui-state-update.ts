@@ -12,6 +12,7 @@ import {
 import {
   normalizeWorkspaceBoardCollapsedColumns,
   normalizeWorkspaceBoardColumnWidths,
+  normalizeWorkspaceBoardDrawerHeight,
   normalizeWorkspaceBoardDrawerWidth
 } from '../../../shared/workspace/status/workspace-board-layout'
 import { normalizeUsagePercentageDisplay } from '../../../shared/agent-usage/display/usage-percentage-display'
@@ -161,6 +162,11 @@ export function updatePersistedUI(
       sanitizedUpdates.workspaceBoardDrawerWidth !== undefined
         ? sanitizedUpdates.workspaceBoardDrawerWidth
         : operations.state.ui?.workspaceBoardDrawerWidth
+    ),
+    workspaceBoardDrawerHeight: normalizeWorkspaceBoardDrawerHeight(
+      sanitizedUpdates.workspaceBoardDrawerHeight !== undefined
+        ? sanitizedUpdates.workspaceBoardDrawerHeight
+        : operations.state.ui?.workspaceBoardDrawerHeight
     ),
     // An explicit null is the double-click reset, so it must not fall back to the saved height.
     sidebarBotsHeight:

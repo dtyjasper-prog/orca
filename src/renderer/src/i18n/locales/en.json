@@ -8554,7 +8554,8 @@
           "createNewProject": "Create new project…"
         },
         "WorkspaceKanbanSheet": {
-          "resizeBoard": "Resize workspace board. Double-click to reset."
+          "resizeBoard": "Resize workspace board. Double-click to reset.",
+          "resizeBoardHeight": "Resize workspace board height. Double-click to reset."
         }
       },
       "shared": {

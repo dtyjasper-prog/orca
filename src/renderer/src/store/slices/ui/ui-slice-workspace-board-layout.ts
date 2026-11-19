@@ -4,12 +4,16 @@ import { clampWorkspaceBoardColumnWidth } from '../../../../../shared/workspace/
 import {
   normalizeWorkspaceBoardCollapsedColumns,
   normalizeWorkspaceBoardColumnWidths,
+  normalizeWorkspaceBoardDrawerHeight,
   normalizeWorkspaceBoardDrawerWidth
 } from '../../../../../shared/workspace/status/workspace-board-layout'
 
 type WorkspaceBoardLayoutState = Pick<
   UISlice,
-  'workspaceBoardColumnWidths' | 'workspaceBoardCollapsedColumns' | 'workspaceBoardDrawerWidth'
+  | 'workspaceBoardColumnWidths'
+  | 'workspaceBoardCollapsedColumns'
+  | 'workspaceBoardDrawerWidth'
+  | 'workspaceBoardDrawerHeight'
 >
 
 export function hydrateWorkspaceBoardLayout(
@@ -20,11 +24,12 @@ export function hydrateWorkspaceBoardLayout(
     workspaceBoardCollapsedColumns: normalizeWorkspaceBoardCollapsedColumns(
       ui.workspaceBoardCollapsedColumns
     ),
-    workspaceBoardDrawerWidth: normalizeWorkspaceBoardDrawerWidth(ui.workspaceBoardDrawerWidth)
+    workspaceBoardDrawerWidth: normalizeWorkspaceBoardDrawerWidth(ui.workspaceBoardDrawerWidth),
+    workspaceBoardDrawerHeight: normalizeWorkspaceBoardDrawerHeight(ui.workspaceBoardDrawerHeight)
   }
 }
 
-/** Per-column widths, collapsed columns and the dragged drawer width of the workspace board. */
+/** Per-column widths, collapsed columns and the dragged drawer size of the workspace board. */
 export function createWorkspaceBoardLayoutActions(
   set: UISliceSet,
   get: UISliceGet
@@ -34,6 +39,7 @@ export function createWorkspaceBoardLayoutActions(
     | 'setWorkspaceBoardStatusColumnWidth'
     | 'toggleWorkspaceBoardColumnCollapsed'
     | 'setWorkspaceBoardDrawerWidth'
+    | 'setWorkspaceBoardDrawerHeight'
   > {
   return {
     workspaceBoardColumnWidths: {},
@@ -66,6 +72,13 @@ export function createWorkspaceBoardLayoutActions(
       const normalized = normalizeWorkspaceBoardDrawerWidth(width)
       window.api.ui.set({ workspaceBoardDrawerWidth: normalized }).catch(console.error)
       set({ workspaceBoardDrawerWidth: normalized })
+    },
+
+    workspaceBoardDrawerHeight: null,
+    setWorkspaceBoardDrawerHeight: (height) => {
+      const normalized = normalizeWorkspaceBoardDrawerHeight(height)
+      window.api.ui.set({ workspaceBoardDrawerHeight: normalized }).catch(console.error)
+      set({ workspaceBoardDrawerHeight: normalized })
     }
   }
 }
