@@ -46,6 +46,7 @@ import {
   CrewSubscribeParams,
   WorkerApprovalsSubscribeParams
 } from '../orchestration/orchestration-crew'
+import { PartyTaskGraphParams } from '../orchestration/orchestration-task-graph'
 import { PeerRunCancelParams } from '../orchestration/remote-owned-wire'
 import {
   OrcadDeclareClientParamsSchema,
@@ -1823,6 +1824,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'orchestration.inbox': InboxParams,
   'orchestration.partyLocation': PartyLocationParams,
   'orchestration.partyOpen': PartyLocationParams,
+  'orchestration.partyTaskGraph': PartyTaskGraphParams,
   'orchestration.peerMailAck': PeerMailAckParams,
   'orchestration.peerMailDeliver': PeerMailDeliverParams,
   'orchestration.peerMailPull': PeerMailPullParams,

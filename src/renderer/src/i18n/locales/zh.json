@@ -22015,7 +22015,23 @@
       "cannotLocate": "此主机找不到此智能体，请重试",
       "latest": "最新消息",
       "to": "发给",
-      "from": "来自"
+      "from": "来自",
+      "showList": "以列表显示",
+      "showGraph": "显示任务关系图",
+      "taskGraph": {
+        "status": {
+          "pending": "等前面的任务",
+          "ready": "可以开始",
+          "dispatched": "进行中",
+          "completed": "已完成",
+          "failed": "失败",
+          "blocked": "卡住了"
+        },
+        "worker": "执行者：{{name}}",
+        "elapsedRunning": "已开始 {{time}}",
+        "elapsedDone": "用时 {{time}}",
+        "progress": "已完成 {{done}}/{{total}}"
+      }
     },
     "link": {
       "routing": {

@@ -5,7 +5,6 @@ import {
 import type { RefObject } from 'react'
 import type { NativeChatComposerHandle } from '../native-chat/composer/native-chat-composer-types'
 import { LazyOrchestrationCrewPanel } from './LazyOrchestrationCrewPanel'
-import { useOrchestrationPanelEnabled } from './use-orchestration-panel-enabled'
 import type { RuntimeClientTarget } from '../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 
 export function NativeChatCrewPanel({
@@ -52,18 +51,15 @@ export function NativeChatCrewFrame({
   panel,
   children
 }: {
-  /** The availability gate prevents unavailable panels from acquiring subscriptions. */
+  /** The panel gates its own crew subscription; the task graph shows either way. */
   panel: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
-  const enabled = useOrchestrationPanelEnabled()
   // Keep transcript layout independent of panel availability.
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      {enabled ? (
-        // Clips the panel to the transcript even when it is shorter than the panel's header.
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">{panel}</div>
-      ) : null}
+      {/* Clips the panel to the transcript even when it is shorter than the panel's header. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">{panel}</div>
       {children}
     </div>
   )

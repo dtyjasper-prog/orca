@@ -23621,7 +23621,23 @@
       "cannotLocate": "This host cannot locate this agent. Try again.",
       "latest": "Latest",
       "to": "To",
-      "from": "From"
+      "from": "From",
+      "showList": "Show as list",
+      "showGraph": "Show task graph",
+      "taskGraph": {
+        "status": {
+          "pending": "Waiting on earlier tasks",
+          "ready": "Ready to start",
+          "dispatched": "In progress",
+          "completed": "Done",
+          "failed": "Failed",
+          "blocked": "Blocked"
+        },
+        "worker": "Worker: {{name}}",
+        "elapsedRunning": "Open for {{time}}",
+        "elapsedDone": "Took {{time}}",
+        "progress": "{{done}}/{{total}} done"
+      }
     },
     "orchestration": {
       "workerAutoClose": {

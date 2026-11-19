@@ -12,6 +12,7 @@ import type {
 } from '../../../../shared/orchestration/orchestration-crew'
 import type { RuntimeClientTarget } from '../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import { useOrchestrationCrew } from './use-orchestration-crew'
+import { useOrchestrationPanelEnabled } from './use-orchestration-panel-enabled'
 import { translate } from '@/i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { hasVisibleOverlay } from '@/lib/overlay-interaction/visible-overlay'
@@ -25,6 +26,9 @@ import {
   type CrewRowLook,
   type CrewStatusGroup
 } from './CrewAgentIcons'
+import { OrchestrationTaskGraph } from './task-graph/OrchestrationTaskGraph'
+import { CrewTaskGraphToggle } from './task-graph/CrewTaskGraphToggle'
+import { useCrewTaskGraphView } from './task-graph/use-crew-task-graph-view'
 
 function runningWorker(row: OrchestrationCrewRow): boolean {
   return Boolean(
@@ -113,9 +117,11 @@ function crewTabSummary(
 }
 
 export function OrchestrationCrewPanel(props: PanelProps): React.JSX.Element | null {
+  // While the crew panel is suspended upstream, no crew producer starts; the task graph still reads.
+  const crewEnabled = useOrchestrationPanelEnabled()
   const snapshot = useOrchestrationCrew(
     props.target,
-    props.isVisible === false ? null : props.party
+    props.isVisible === false || !crewEnabled ? null : props.party
   )
   return <CrewPanelContent {...props} snapshot={snapshot} />
 }
@@ -220,7 +226,17 @@ export function CrewPanelContent({
     () => new Map(parties.map((row, index) => [row.partyKey, looks[index]])),
     [parties, looks]
   )
-  const visible = snapshot.status === 'ok' && parties.length > 0
+  const taskGraph = useCrewTaskGraphView({
+    target,
+    party,
+    isVisible,
+    open,
+    managing,
+    lookByParty
+  })
+  // A coordinator whose tasks are not dispatched yet still gets the panel, so the plan shows.
+  const visible = (snapshot.status === 'ok' && parties.length > 0) || taskGraph.hasGraph
+  const showGraph = taskGraph.view === 'graph'
   useEffect(() => {
     const pane =
       root.current?.closest<HTMLElement>('[data-native-chat-root], .pane') ?? root.current
@@ -281,7 +297,8 @@ export function CrewPanelContent({
           // (their frame stops there); terminals keep the bottom quarter, where the CLI's prompt sits.
           // The header (and its collapse button) always shows: in a pane too short for both, it wins.
           className={cn(
-            'pointer-events-auto absolute right-2.5 top-[calc(var(--orca-pane-title-height)+var(--spacing)*2)] flex min-h-[calc(var(--spacing)*9+2px)] w-78 max-w-[calc(100%-var(--spacing)*5)] flex-col overflow-hidden rounded-[12px] border border-(--crew-border) bg-(--crew-surface) text-card-foreground shadow-floating',
+            'pointer-events-auto absolute right-2.5 top-[calc(var(--orca-pane-title-height)+var(--spacing)*2)] flex min-h-[calc(var(--spacing)*9+2px)] max-w-[calc(100%-var(--spacing)*5)] flex-col overflow-hidden rounded-[12px] border border-(--crew-border) bg-(--crew-surface) text-card-foreground shadow-floating',
+            showGraph ? 'w-176' : 'w-78',
             surface === 'terminal'
               ? 'max-h-[calc(75%-var(--orca-pane-title-height)-var(--spacing)*2)]'
               : 'max-h-[calc(100%-var(--orca-pane-title-height)-var(--spacing)*4)]'
@@ -289,7 +306,10 @@ export function CrewPanelContent({
         >
           {/* The collapse button keeps its room in the narrowest panes: the title truncates and the side padding shrinks first. */}
           <div className="flex h-9 shrink-0 items-center justify-between border-b border-border px-[clamp(0px,calc((100%-var(--spacing)*6)/2),calc(var(--spacing)*2))]">
-            <span className="min-w-0 truncate text-xs font-medium">{title}</span>
+            <span className="min-w-0 flex-1 truncate text-xs font-medium">{title}</span>
+            {taskGraph.hasGraph ? (
+              <CrewTaskGraphToggle showGraph={showGraph} onToggle={taskGraph.toggleView} />
+            ) : null}
             <IconButton
               ref={collapse}
               label={t('components.orchestrationCrew.collapse', 'Collapse orchestration panel')}
@@ -298,43 +318,51 @@ export function CrewPanelContent({
               <PanelRightClose />
             </IconButton>
           </div>
-          <div className="scrollbar-sleek min-h-0 overflow-y-auto pb-2">
-            {sections.map(([key, sectionTitle, rows]) =>
-              rows.length > 0 ? (
-                <section key={key} aria-label={sectionTitle}>
-                  <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-3 text-2xs font-semibold text-muted-foreground">
-                    <span className="uppercase tracking-wider">{sectionTitle}</span>
-                    <span className="tracking-wider">{rows.length}</span>
-                    {key === 'Managing' ? (
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        className="ml-auto h-5"
-                        disabled={!canMention || !rows.some(runningWorker)}
-                        onClick={() => mention(rows.filter(runningWorker))}
-                      >
-                        {t('components.orchestrationCrew.mentionAll', 'Mention all')}
-                      </Button>
-                    ) : null}
-                  </div>
-                  {rows.map((row) => (
-                    <CrewRowView
-                      key={row.partyKey}
-                      row={row}
-                      look={lookByParty.get(row.partyKey)!}
-                      target={target}
-                      isVisible={isVisible}
-                      canMention={canMention}
-                      mention={stableMention}
-                      disclosureKey={disclosureKey(key, row.partyKey)}
-                      expanded={disclosures.keys.has(disclosureKey(key, row.partyKey))}
-                      toggleDisclosure={toggleDisclosure}
-                    />
-                  ))}
-                </section>
-              ) : null
-            )}
-          </div>
+          {showGraph ? (
+            <OrchestrationTaskGraph
+              graph={taskGraph.graph}
+              readAt={taskGraph.readAt}
+              workerByHandle={taskGraph.workerByHandle}
+            />
+          ) : (
+            <div className="scrollbar-sleek min-h-0 overflow-y-auto pb-2">
+              {sections.map(([key, sectionTitle, rows]) =>
+                rows.length > 0 ? (
+                  <section key={key} aria-label={sectionTitle}>
+                    <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-3 text-2xs font-semibold text-muted-foreground">
+                      <span className="uppercase tracking-wider">{sectionTitle}</span>
+                      <span className="tracking-wider">{rows.length}</span>
+                      {key === 'Managing' ? (
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          className="ml-auto h-5"
+                          disabled={!canMention || !rows.some(runningWorker)}
+                          onClick={() => mention(rows.filter(runningWorker))}
+                        >
+                          {t('components.orchestrationCrew.mentionAll', 'Mention all')}
+                        </Button>
+                      ) : null}
+                    </div>
+                    {rows.map((row) => (
+                      <CrewRowView
+                        key={row.partyKey}
+                        row={row}
+                        look={lookByParty.get(row.partyKey)!}
+                        target={target}
+                        isVisible={isVisible}
+                        canMention={canMention}
+                        mention={stableMention}
+                        disclosureKey={disclosureKey(key, row.partyKey)}
+                        expanded={disclosures.keys.has(disclosureKey(key, row.partyKey))}
+                        toggleDisclosure={toggleDisclosure}
+                      />
+                    ))}
+                  </section>
+                ) : null
+              )}
+            </div>
+          )}
         </aside>
       ) : (
         <Tooltip>
@@ -354,8 +382,10 @@ export function CrewPanelContent({
               <span aria-hidden className="mx-0.5 h-3.5 w-px shrink-0 bg-border" />
               <span aria-hidden className="inline-flex items-center gap-0.5 text-muted-foreground">
                 <Workflow className="size-3" />
-                {managing.length > 0 ? (
-                  <span className="text-[11px] tabular-nums">{managing.length}</span>
+                {managing.length > 0 || taskGraph.hasGraph ? (
+                  <span className="text-[11px] tabular-nums">
+                    {managing.length > 0 ? managing.length : taskGraph.graph.tasks.length}
+                  </span>
                 ) : null}
               </span>
               <span aria-hidden className="ml-0.5 inline-flex min-w-0 items-center gap-1">
