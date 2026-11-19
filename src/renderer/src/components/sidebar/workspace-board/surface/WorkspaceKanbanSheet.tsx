@@ -6,11 +6,19 @@ import {
   WORKSPACE_TOP_CHROME_HEIGHT
 } from '../../../../app-shell/chrome/workspace-chrome-metrics'
 import { trackSidebarLiveWidth } from '../../chrome/sidebar-live-width'
+import { cn } from '@/lib/class-names'
+import { useTranslate } from '@/i18n/use-translate'
+import { useWorkspaceKanbanDrawerResize } from './use-workspace-kanban-drawer-resize'
+
+const WORKSPACE_BOARD_DEFAULT_DRAWER_MAX_WIDTH = 1294
 
 type WorkspaceKanbanSheetProps = {
   boardRef: React.RefObject<HTMLDivElement | null>
   children: React.ReactNode
   dragPreview: boolean
+  /** Saved drawer width; null keeps the default. */
+  drawerWidth: number | null
+  onDrawerWidthChange: (width: number | null) => void
   leftSidebarStyle?: React.CSSProperties
   onOpenChange: (open: boolean) => void
   open: boolean
@@ -24,6 +32,8 @@ export default function WorkspaceKanbanSheet({
   boardRef,
   children,
   dragPreview,
+  drawerWidth: savedDrawerWidth,
+  onDrawerWidthChange,
   leftSidebarStyle,
   onOpenChange,
   open,
@@ -37,6 +47,10 @@ export default function WorkspaceKanbanSheet({
     ? `var(--workspace-sidebar-live-width, ${sidebarWidth}px)`
     : '0px'
   const drawerBottom = `${statusBarVisible ? STATUS_BAR_RESERVE_HEIGHT : 0}px`
+  const t = useTranslate()
+  const { drawerWidth, isResizingDrawer, onDrawerResizeStart, onDrawerResizeReset } =
+    useWorkspaceKanbanDrawerResize(savedDrawerWidth, onDrawerWidthChange)
+  const drawerMaxWidth = drawerWidth ?? WORKSPACE_BOARD_DEFAULT_DRAWER_MAX_WIDTH
   const keepOpenForOutsideEvent = (event: {
     preventDefault: () => void
     detail: { originalEvent: Event }
@@ -87,7 +101,7 @@ export default function WorkspaceKanbanSheet({
             top: WORKSPACE_TOP_CHROME_HEIGHT,
             bottom: drawerBottom,
             height: 'auto',
-            width: `min(calc(100vw - ${drawerLeftCss}), 1294px)`
+            width: `min(calc(100vw - ${drawerLeftCss}), ${drawerMaxWidth}px)`
           } as React.CSSProperties
         }
         data-contextual-tour-target="workspace-board-surface"
@@ -99,6 +113,26 @@ export default function WorkspaceKanbanSheet({
         onInteractOutside={keepOpenForOutsideEvent}
       >
         {children}
+        <div
+          data-workspace-board-drawer-resize-handle=""
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t(
+            'auto.components.sidebar.WorkspaceKanbanSheet.resizeBoard',
+            'Resize workspace board. Double-click to reset.'
+          )}
+          className="group absolute inset-y-0 right-0 z-30 w-1.5 cursor-col-resize"
+          onPointerDown={onDrawerResizeStart}
+          onDoubleClick={onDrawerResizeReset}
+        >
+          <span
+            className={cn(
+              'absolute inset-y-0 right-0 w-px bg-transparent transition-colors',
+              'group-hover:bg-worktree-sidebar-ring/55',
+              isResizingDrawer && 'bg-worktree-sidebar-ring'
+            )}
+          />
+        </div>
       </SheetContent>
     </Sheet>
   )

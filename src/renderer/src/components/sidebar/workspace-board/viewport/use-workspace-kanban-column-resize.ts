@@ -1,102 +1,99 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type React from 'react'
 import {
   WORKSPACE_BOARD_COLUMN_WIDTH_STEP,
   clampWorkspaceBoardColumnWidth
 } from '../../../../../../shared/workspace/status/workspace-statuses'
 
-type UseWorkspaceKanbanColumnResizeResult = {
-  columnWidth: number
-  isResizingColumn: boolean
-  onColumnResizeStart: (event: React.PointerEvent<HTMLElement>) => void
-  onColumnResizeKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void
+type ColumnResizeDraft = { statusId: string; width: number }
+
+type UseWorkspaceKanbanColumnResizeOptions = {
+  /** Committed width of one status column, before any in-flight drag. */
+  resolveWidth: (statusId: string) => number
+  onCommitWidth: (statusId: string, width: number) => void
+  onResetWidth: (statusId: string) => void
 }
 
-export function useWorkspaceKanbanColumnResize(
-  committedWidth: number,
-  onCommitWidth: (width: number) => void
-): UseWorkspaceKanbanColumnResizeResult {
-  const [columnWidth, setColumnWidth] = useState(() =>
-    clampWorkspaceBoardColumnWidth(committedWidth)
-  )
-  const [isResizingColumn, setIsResizingColumn] = useState(false)
-  const nextCommittedWidth = clampWorkspaceBoardColumnWidth(committedWidth)
-  const [renderedCommittedWidth, setRenderedCommittedWidth] = useState(nextCommittedWidth)
-  const committedWidthRef = useRef(nextCommittedWidth)
-  const commitWidthRef = useRef(onCommitWidth)
-  const resizingRef = useRef(false)
-  const startXRef = useRef(0)
-  const startWidthRef = useRef(columnWidth)
-  const draftWidthRef = useRef(columnWidth)
-  const frameRef = useRef<number | null>(null)
+export type WorkspaceKanbanColumnResize = {
+  /** Status column being dragged, or null. */
+  resizingStatusId: string | null
+  /** Rendered width of a column, including an in-flight drag draft. */
+  getColumnWidth: (statusId: string) => number
+  onColumnResizeStart: (event: React.PointerEvent<HTMLElement>, statusId: string) => void
+  onColumnResizeKeyDown: (event: React.KeyboardEvent<HTMLElement>, statusId: string) => void
+  onColumnResizeReset: (statusId: string) => void
+}
 
+export function useWorkspaceKanbanColumnResize({
+  resolveWidth,
+  onCommitWidth,
+  onResetWidth
+}: UseWorkspaceKanbanColumnResizeOptions): WorkspaceKanbanColumnResize {
+  const [draft, setDraft] = useState<ColumnResizeDraft | null>(null)
+  const draftRef = useRef<ColumnResizeDraft | null>(null)
+  const startXRef = useRef(0)
+  const startWidthRef = useRef(0)
+  const frameRef = useRef<number | null>(null)
+  const resolveWidthRef = useRef(resolveWidth)
+  const commitWidthRef = useRef(onCommitWidth)
+  resolveWidthRef.current = resolveWidth
   commitWidthRef.current = onCommitWidth
-  if (renderedCommittedWidth !== nextCommittedWidth) {
-    setRenderedCommittedWidth(nextCommittedWidth)
-    if (!resizingRef.current && columnWidth !== nextCommittedWidth) {
-      // Apply external widths before rendering children; retain the local draft during active resize.
-      setColumnWidth(nextCommittedWidth)
+
+  const cancelFrame = useCallback(() => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current)
+      frameRef.current = null
     }
-  }
-  // Sync handler refs after commit so a discarded render cannot leave them on an abandoned width.
-  useLayoutEffect(() => {
-    committedWidthRef.current = nextCommittedWidth
-    if (!resizingRef.current) {
-      draftWidthRef.current = nextCommittedWidth
-    }
-  }, [nextCommittedWidth])
+  }, [])
 
   const resetDocumentStyles = useCallback(() => {
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
   }, [])
 
-  const publishDraftWidth = useCallback((width: number) => {
+  const publishDraft = useCallback((statusId: string, width: number) => {
     const nextWidth = clampWorkspaceBoardColumnWidth(width)
-    if (nextWidth === draftWidthRef.current) {
+    const current = draftRef.current
+    if (current?.statusId === statusId && current.width === nextWidth) {
       return
     }
-    draftWidthRef.current = nextWidth
+    draftRef.current = { statusId, width: nextWidth }
     if (frameRef.current !== null) {
       return
     }
     frameRef.current = window.requestAnimationFrame(() => {
       frameRef.current = null
-      setColumnWidth(draftWidthRef.current)
+      setDraft(draftRef.current)
     })
   }, [])
 
-  const commitDraftWidth = useCallback(() => {
-    const nextWidth = clampWorkspaceBoardColumnWidth(draftWidthRef.current)
-    setColumnWidth(nextWidth)
-    if (nextWidth !== committedWidthRef.current) {
-      committedWidthRef.current = nextWidth
-      commitWidthRef.current(nextWidth)
+  const commitDraft = useCallback(() => {
+    const current = draftRef.current
+    draftRef.current = null
+    cancelFrame()
+    setDraft(null)
+    if (current && current.width !== resolveWidthRef.current(current.statusId)) {
+      commitWidthRef.current(current.statusId, current.width)
     }
-  }, [])
+  }, [cancelFrame])
 
   const stopResize = useCallback(() => {
-    if (!resizingRef.current) {
+    if (!draftRef.current) {
       return
     }
-    resizingRef.current = false
-    setIsResizingColumn(false)
-    if (frameRef.current !== null) {
-      cancelAnimationFrame(frameRef.current)
-      frameRef.current = null
-    }
     resetDocumentStyles()
-    commitDraftWidth()
-  }, [commitDraftWidth, resetDocumentStyles])
+    commitDraft()
+  }, [commitDraft, resetDocumentStyles])
 
   const handlePointerMove = useCallback(
     (event: PointerEvent) => {
-      if (!resizingRef.current) {
+      const current = draftRef.current
+      if (!current) {
         return
       }
-      publishDraftWidth(startWidthRef.current + event.clientX - startXRef.current)
+      publishDraft(current.statusId, startWidthRef.current + event.clientX - startXRef.current)
     },
-    [publishDraftWidth]
+    [publishDraft]
   )
 
   useEffect(() => {
@@ -104,37 +101,37 @@ export function useWorkspaceKanbanColumnResize(
     window.addEventListener('pointerup', stopResize)
     window.addEventListener('pointercancel', stopResize)
     window.addEventListener('blur', stopResize)
-
     return () => {
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', stopResize)
       window.removeEventListener('pointercancel', stopResize)
       window.removeEventListener('blur', stopResize)
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current)
-        frameRef.current = null
-      }
-      resizingRef.current = false
+      cancelFrame()
+      draftRef.current = null
       resetDocumentStyles()
     }
-  }, [handlePointerMove, resetDocumentStyles, stopResize])
+  }, [cancelFrame, handlePointerMove, resetDocumentStyles, stopResize])
 
-  const onColumnResizeStart = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    if (event.button !== 0) {
-      return
-    }
-    event.preventDefault()
-    event.stopPropagation()
-    resizingRef.current = true
-    setIsResizingColumn(true)
-    startXRef.current = event.clientX
-    startWidthRef.current = draftWidthRef.current
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }, [])
+  const onColumnResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLElement>, statusId: string) => {
+      if (event.button !== 0) {
+        return
+      }
+      event.preventDefault()
+      event.stopPropagation()
+      const width = resolveWidthRef.current(statusId)
+      startXRef.current = event.clientX
+      startWidthRef.current = width
+      draftRef.current = { statusId, width }
+      setDraft(draftRef.current)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    },
+    []
+  )
 
   const onColumnResizeKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLElement>) => {
+    (event: React.KeyboardEvent<HTMLElement>, statusId: string) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
         return
       }
@@ -142,20 +139,25 @@ export function useWorkspaceKanbanColumnResize(
       event.stopPropagation()
       const direction = event.key === 'ArrowRight' ? 1 : -1
       const step = WORKSPACE_BOARD_COLUMN_WIDTH_STEP * (event.shiftKey ? 2 : 1)
-      publishDraftWidth(draftWidthRef.current + direction * step)
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current)
-        frameRef.current = null
+      draftRef.current = {
+        statusId,
+        width: clampWorkspaceBoardColumnWidth(resolveWidthRef.current(statusId) + direction * step)
       }
-      commitDraftWidth()
+      commitDraft()
     },
-    [commitDraftWidth, publishDraftWidth]
+    [commitDraft]
+  )
+
+  const getColumnWidth = useCallback(
+    (statusId: string) => (draft?.statusId === statusId ? draft.width : resolveWidth(statusId)),
+    [draft, resolveWidth]
   )
 
   return {
-    columnWidth,
-    isResizingColumn,
+    resizingStatusId: draft?.statusId ?? null,
+    getColumnWidth,
     onColumnResizeStart,
-    onColumnResizeKeyDown
+    onColumnResizeKeyDown,
+    onColumnResizeReset: onResetWidth
   }
 }

@@ -133,6 +133,11 @@ export type PersistedUIState = {
   workspaceStatuses?: WorkspaceStatusDefinition[]
   workspaceBoardOpacity?: number
   workspaceBoardColumnWidth?: number
+  /** Per-status column widths in px; statuses without an entry use workspaceBoardColumnWidth. */
+  workspaceBoardColumnWidths?: Record<string, number>
+  workspaceBoardCollapsedColumns?: string[]
+  /** Dragged in-window drawer width in px; absent or null keeps the default width. */
+  workspaceBoardDrawerWidth?: number | null
   /** Dragged cap on the sidebar Bots section in px; absent or null keeps the default 40% cap. */
   sidebarBotsHeight?: number | null
   syncTaskStatusFromWorkspaceBoard?: boolean

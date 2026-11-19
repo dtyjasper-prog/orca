@@ -6401,7 +6401,10 @@
           "8ad104642b": "空的",
           "3611d1ae7f": "调整工作区板列的大小",
           "2df01a03ff": "没有匹配项",
-          "newWorkspaceIn": "在 {{status}} 中新建工作区"
+          "newWorkspaceIn": "在 {{status}} 中新建工作区",
+          "expandColumn": "展开「{{status}}」",
+          "collapseColumn": "折叠「{{status}}」",
+          "resizeColumn": "调整「{{status}}」列宽，双击恢复默认"
         },
         "WorkspaceStatusAppearancePopover": {
           "514be2f569": "将 {{value0}} 颜色设置为 {{value1}}",
@@ -7361,7 +7364,10 @@
           "showLess": "收起",
           "showMore_other": "再显示 {{count}} 行"
         },
-        "projectOrderSaveFailed": "无法保存完整的项目顺序"
+        "projectOrderSaveFailed": "无法保存完整的项目顺序",
+        "WorkspaceKanbanSheet": {
+          "resizeBoard": "调整工作区板宽度，双击恢复默认"
+        }
       },
       "shared": {
         "useDaemonActions": {

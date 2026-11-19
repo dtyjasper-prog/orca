@@ -9,6 +9,11 @@ import {
   clampWorkspaceBoardColumnWidth,
   clampWorkspaceBoardOpacity
 } from '../../../shared/workspace/status/workspace-statuses'
+import {
+  normalizeWorkspaceBoardCollapsedColumns,
+  normalizeWorkspaceBoardColumnWidths,
+  normalizeWorkspaceBoardDrawerWidth
+} from '../../../shared/workspace/status/workspace-board-layout'
 import { normalizeUsagePercentageDisplay } from '../../../shared/agent-usage/display/usage-percentage-display'
 import { normalizeStatusBarUsageMode } from '../../../shared/status-bar/status-bar-usage-mode'
 import { normalizeStatusBarUsageFormat } from '../../../shared/status-bar/status-bar-usage-format'
@@ -143,6 +148,19 @@ export function updatePersistedUI(
     ),
     workspaceBoardColumnWidth: clampWorkspaceBoardColumnWidth(
       sanitizedUpdates.workspaceBoardColumnWidth ?? operations.state.ui?.workspaceBoardColumnWidth
+    ),
+    workspaceBoardColumnWidths: normalizeWorkspaceBoardColumnWidths(
+      sanitizedUpdates.workspaceBoardColumnWidths ?? operations.state.ui?.workspaceBoardColumnWidths
+    ),
+    workspaceBoardCollapsedColumns: normalizeWorkspaceBoardCollapsedColumns(
+      sanitizedUpdates.workspaceBoardCollapsedColumns ??
+        operations.state.ui?.workspaceBoardCollapsedColumns
+    ),
+    // An explicit null is the double-click reset, so it must not fall back to the saved width.
+    workspaceBoardDrawerWidth: normalizeWorkspaceBoardDrawerWidth(
+      sanitizedUpdates.workspaceBoardDrawerWidth !== undefined
+        ? sanitizedUpdates.workspaceBoardDrawerWidth
+        : operations.state.ui?.workspaceBoardDrawerWidth
     ),
     // An explicit null is the double-click reset, so it must not fall back to the saved height.
     sidebarBotsHeight:

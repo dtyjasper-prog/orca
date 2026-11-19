@@ -127,6 +127,15 @@ export type UISlicePreferences = {
   setWorkspaceBoardOpacity: (opacity: number) => void
   workspaceBoardColumnWidth: number
   setWorkspaceBoardColumnWidth: (width: number) => void
+  /** Per-status width overrides; statuses without one use workspaceBoardColumnWidth. */
+  workspaceBoardColumnWidths: Readonly<Record<string, number>>
+  /** null clears the status's override so it follows the shared width again. */
+  setWorkspaceBoardStatusColumnWidth: (statusId: string, width: number | null) => void
+  workspaceBoardCollapsedColumns: readonly string[]
+  toggleWorkspaceBoardColumnCollapsed: (statusId: string) => void
+  /** Dragged in-window drawer width; null keeps the default. */
+  workspaceBoardDrawerWidth: number | null
+  setWorkspaceBoardDrawerWidth: (width: number | null) => void
   /** Dragged cap on the sidebar Bots section; null keeps the default 40% cap. */
   sidebarBotsHeight: number | null
   setSidebarBotsHeight: (height: number | null) => void

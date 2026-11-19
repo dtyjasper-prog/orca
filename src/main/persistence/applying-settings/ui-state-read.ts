@@ -9,6 +9,11 @@ import {
   clampWorkspaceBoardColumnWidth,
   clampWorkspaceBoardOpacity
 } from '../../../shared/workspace/status/workspace-statuses'
+import {
+  normalizeWorkspaceBoardCollapsedColumns,
+  normalizeWorkspaceBoardColumnWidths,
+  normalizeWorkspaceBoardDrawerWidth
+} from '../../../shared/workspace/status/workspace-board-layout'
 import { normalizeUsagePercentageDisplay } from '../../../shared/agent-usage/display/usage-percentage-display'
 import { normalizeStatusBarUsageMode } from '../../../shared/status-bar/status-bar-usage-mode'
 import { normalizeStatusBarUsageFormat } from '../../../shared/status-bar/status-bar-usage-format'
@@ -57,6 +62,15 @@ export function getPersistedUI(
     workspaceStatuses: normalizeWorkspaceStatuses(state.ui?.workspaceStatuses),
     workspaceBoardOpacity: clampWorkspaceBoardOpacity(state.ui?.workspaceBoardOpacity),
     workspaceBoardColumnWidth: clampWorkspaceBoardColumnWidth(state.ui?.workspaceBoardColumnWidth),
+    workspaceBoardColumnWidths: normalizeWorkspaceBoardColumnWidths(
+      state.ui?.workspaceBoardColumnWidths
+    ),
+    workspaceBoardCollapsedColumns: normalizeWorkspaceBoardCollapsedColumns(
+      state.ui?.workspaceBoardCollapsedColumns
+    ),
+    workspaceBoardDrawerWidth: normalizeWorkspaceBoardDrawerWidth(
+      state.ui?.workspaceBoardDrawerWidth
+    ),
     sidebarBotsHeight: normalizeSidebarBotsHeight(state.ui?.sidebarBotsHeight) ?? undefined,
     syncTaskStatusFromWorkspaceBoard: state.ui?.syncTaskStatusFromWorkspaceBoard === true,
     usagePercentageDisplay: normalizeUsagePercentageDisplay(state.ui?.usagePercentageDisplay),

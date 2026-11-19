@@ -41,6 +41,7 @@ import {
   WORKSPACE_BOARD_COLUMN_WIDTH_DEFAULT
 } from '../../../../../shared/workspace/status/workspace-statuses'
 import { createHostWorkspaceStatusActions } from './ui-slice-host-workspace-statuses'
+import { createWorkspaceBoardLayoutActions } from './ui-slice-workspace-board-layout'
 import { createUiBotPreferenceActions } from './ui-slice-bot-preference-actions'
 import { toggleCollapsedGroupSet } from './collapsed-group-toggle'
 
@@ -254,6 +255,8 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
       window.api.ui.set({ workspaceBoardColumnWidth: clamped }).catch(console.error)
       set({ workspaceBoardColumnWidth: clamped })
     },
+
+    ...createWorkspaceBoardLayoutActions(set, get),
 
     syncTaskStatusFromWorkspaceBoard: false,
     setSyncTaskStatusFromWorkspaceBoard: (enabled) => {

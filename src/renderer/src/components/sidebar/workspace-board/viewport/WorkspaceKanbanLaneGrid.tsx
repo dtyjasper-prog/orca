@@ -17,6 +17,8 @@ import type {
 import type { WorkspaceKanbanLaneView } from '../search/workspace-kanban-search'
 import { extractPinnedVirtualRange } from '@/lib/list-interaction/pinned-virtual-range'
 import WorkspaceKanbanStatusLane from './WorkspaceKanbanStatusLane'
+import type { WorkspaceKanbanColumnResize } from './use-workspace-kanban-column-resize'
+import { WORKSPACE_BOARD_COLLAPSED_COLUMN_WIDTH } from '../../../../../../shared/workspace/status/workspace-board-layout'
 
 // Reuse empty lane arrays so unrelated renders preserve memoization.
 const EMPTY_LANE_ITEMS: readonly Worktree[] = []
@@ -32,8 +34,9 @@ type WorkspaceKanbanLaneGridProps = {
   hasQuery: boolean
   repoMap: Map<string, Repo>
   activeWorktreeIdentity: string | null
-  columnWidth: number
-  isResizingColumn: boolean
+  columnResize: WorkspaceKanbanColumnResize
+  collapsedColumnIds: ReadonlySet<string>
+  onToggleColumnCollapsed: (statusId: string) => void
   dragOverStatus: WorkspaceStatus | null
   renderCards: boolean
   selectedWorktreeIds: ReadonlySet<string>
@@ -49,8 +52,6 @@ type WorkspaceKanbanLaneGridProps = {
   ) => readonly Worktree[]
   onAssignWorkspaceStatus?: (worktreeIds: readonly string[], status: WorkspaceStatus) => void
   onCreateWorktree: (statusId: string) => void
-  onColumnResizeStart: (event: React.PointerEvent<HTMLElement>) => void
-  onColumnResizeKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void
 }
 
 export default function WorkspaceKanbanLaneGrid({
@@ -61,8 +62,9 @@ export default function WorkspaceKanbanLaneGrid({
   hasQuery,
   repoMap,
   activeWorktreeIdentity,
-  columnWidth,
-  isResizingColumn,
+  columnResize,
+  collapsedColumnIds,
+  onToggleColumnCollapsed,
   dragOverStatus,
   renderCards,
   selectedWorktreeIds,
@@ -74,9 +76,7 @@ export default function WorkspaceKanbanLaneGrid({
   onSelectionGesture,
   onContextMenuSelect,
   onAssignWorkspaceStatus,
-  onCreateWorktree,
-  onColumnResizeStart,
-  onColumnResizeKeyDown
+  onCreateWorktree
 }: WorkspaceKanbanLaneGridProps): React.JSX.Element {
   const [focusedStatusId, setFocusedStatusId] = useState<WorkspaceStatus | null>(null)
   const [renderedLaneIds, setRenderedLaneIds] =
@@ -94,7 +94,21 @@ export default function WorkspaceKanbanLaneGrid({
         : statuses.findIndex((status) => status.id === focusedStatusId),
     [focusedStatusId, statuses]
   )
-  const estimateLaneSize = useCallback(() => columnWidth, [columnWidth])
+  const { getColumnWidth } = columnResize
+  const getLaneWidth = useCallback(
+    (statusId: string) =>
+      collapsedColumnIds.has(statusId)
+        ? WORKSPACE_BOARD_COLLAPSED_COLUMN_WIDTH
+        : getColumnWidth(statusId),
+    [collapsedColumnIds, getColumnWidth]
+  )
+  const estimateLaneSize = useCallback(
+    (index: number) => {
+      const statusId = statuses[index]?.id
+      return statusId ? getLaneWidth(statusId) : WORKSPACE_BOARD_COLLAPSED_COLUMN_WIDTH
+    },
+    [getLaneWidth, statuses]
+  )
   const getLaneKey = useCallback((index: number) => statuses[index]?.id ?? index, [statuses])
   const rangeExtractor = useCallback(
     (range: Range) => extractPinnedVirtualRange(range, [focusedIndex]),
@@ -113,7 +127,7 @@ export default function WorkspaceKanbanLaneGrid({
   })
   useLayoutEffect(() => {
     laneVirtualizer.measure()
-  }, [columnWidth, laneVirtualizer])
+  }, [estimateLaneSize, laneVirtualizer])
   const virtualLanes = laneVirtualizer.getVirtualItems()
   const virtualStatusIds = useMemo(
     () =>
@@ -186,6 +200,7 @@ export default function WorkspaceKanbanLaneGrid({
         if (!status) {
           return null
         }
+        const laneWidth = getLaneWidth(status.id)
         return (
           <div
             key={virtualLane.key}
@@ -193,7 +208,7 @@ export default function WorkspaceKanbanLaneGrid({
             data-index={virtualLane.index}
             className="absolute left-0 top-0 h-full"
             style={{
-              width: `${columnWidth}px`,
+              width: `${laneWidth}px`,
               transform: `translateX(${virtualLane.start}px)`
             }}
           >
@@ -205,8 +220,10 @@ export default function WorkspaceKanbanLaneGrid({
               fullWorktreeIds={laneFullWorktreeIds.get(status.id) ?? []}
               repoMap={repoMap}
               activeWorktreeIdentity={activeWorktreeIdentity}
-              columnWidth={columnWidth}
-              isResizingColumn={isResizingColumn}
+              columnWidth={laneWidth}
+              isResizingColumn={columnResize.resizingStatusId === status.id}
+              isCollapsed={collapsedColumnIds.has(status.id)}
+              onToggleCollapsed={onToggleColumnCollapsed}
               isDragTarget={dragOverStatus === status.id}
               renderCards={renderCards && renderedLaneIds.has(status.id)}
               selectedWorktreeIds={selectedWorktreeIds}
@@ -220,8 +237,9 @@ export default function WorkspaceKanbanLaneGrid({
               onContextMenuSelect={onContextMenuSelect}
               onAssignWorkspaceStatus={onAssignWorkspaceStatus}
               onCreateWorktree={onCreateWorktree}
-              onColumnResizeStart={onColumnResizeStart}
-              onColumnResizeKeyDown={onColumnResizeKeyDown}
+              onColumnResizeStart={columnResize.onColumnResizeStart}
+              onColumnResizeKeyDown={columnResize.onColumnResizeKeyDown}
+              onColumnResizeReset={columnResize.onColumnResizeReset}
             />
           </div>
         )

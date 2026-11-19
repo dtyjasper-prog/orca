@@ -9,6 +9,8 @@ type WorkspaceKanbanDrawerViewProps = {
   areaSelectionOverlayRef: React.RefObject<HTMLDivElement | null>
   boardRef: React.RefObject<HTMLDivElement | null>
   dragPreview: boolean
+  drawerWidth: number | null
+  onDrawerWidthChange: (width: number | null) => void
   headerProps: React.ComponentProps<typeof WorkspaceKanbanDrawerHeader>
   laneGridProps: React.ComponentProps<typeof WorkspaceKanbanLaneGrid>
   leftSidebarStyle?: React.CSSProperties
@@ -32,6 +34,8 @@ export default function WorkspaceKanbanDrawerView(
     <WorkspaceKanbanSheet
       boardRef={props.boardRef}
       dragPreview={props.dragPreview}
+      drawerWidth={props.drawerWidth}
+      onDrawerWidthChange={props.onDrawerWidthChange}
       leftSidebarStyle={props.leftSidebarStyle}
       onOpenChange={props.onOpenChange}
       open={props.open}

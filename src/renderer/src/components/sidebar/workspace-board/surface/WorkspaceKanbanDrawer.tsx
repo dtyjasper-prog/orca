@@ -23,10 +23,13 @@ import { useWorkspaceKanbanRenderLifecycle } from './use-workspace-kanban-render
 import { useWorkspaceKanbanDrawerLingering } from './use-workspace-kanban-drawer-lingering'
 import { buildWorktreeManualOrderCatalog } from '../../worktree-list/drag/worktree-manual-order-catalog'
 import { selectFolderWorkspaces } from '@/store/workspaces/catalog/workspace-record-fields'
+import { resolveWorkspaceBoardLaneWidth } from '../../../../../../shared/workspace/status/workspace-board-layout'
 import {
   useAllOfferedWorkspaceStatuses,
   useWorkspaceBoardStatuses
 } from '../../workspace-status/presentation/use-workspace-board-statuses'
+
+const EMPTY_COLLAPSED_COLUMNS: ReadonlySet<string> = new Set()
 
 type WorkspaceKanbanDrawerProps = {
   leftSidebarStyle?: React.CSSProperties
@@ -74,7 +77,16 @@ function WorkspaceKanbanDrawerContent({
     (s) => s.setSyncTaskStatusFromWorkspaceBoard
   )
   const workspaceBoardColumnWidth = useAppStore((s) => s.workspaceBoardColumnWidth)
-  const setWorkspaceBoardColumnWidth = useAppStore((s) => s.setWorkspaceBoardColumnWidth)
+  const workspaceBoardColumnWidths = useAppStore((s) => s.workspaceBoardColumnWidths)
+  const setWorkspaceBoardStatusColumnWidth = useAppStore(
+    (s) => s.setWorkspaceBoardStatusColumnWidth
+  )
+  const workspaceBoardCollapsedColumns = useAppStore((s) => s.workspaceBoardCollapsedColumns)
+  const workspaceBoardDrawerWidth = useAppStore((s) => s.workspaceBoardDrawerWidth)
+  const setWorkspaceBoardDrawerWidth = useAppStore((s) => s.setWorkspaceBoardDrawerWidth)
+  const toggleWorkspaceBoardColumnCollapsed = useAppStore(
+    (s) => s.toggleWorkspaceBoardColumnCollapsed
+  )
   const sortBy = useAppStore((s) => s.sortBy)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
@@ -123,8 +135,29 @@ function WorkspaceKanbanDrawerContent({
     selectionAnchorId,
     updateSelectionForArea
   })
-  const { columnWidth, isResizingColumn, onColumnResizeStart, onColumnResizeKeyDown } =
-    useWorkspaceKanbanColumnResize(workspaceBoardColumnWidth, setWorkspaceBoardColumnWidth)
+  const resolveColumnWidth = useCallback(
+    (statusId: string) =>
+      resolveWorkspaceBoardLaneWidth(
+        statusId,
+        workspaceBoardColumnWidth,
+        workspaceBoardColumnWidths,
+        EMPTY_COLLAPSED_COLUMNS
+      ),
+    [workspaceBoardColumnWidth, workspaceBoardColumnWidths]
+  )
+  const resetColumnWidth = useCallback(
+    (statusId: string) => setWorkspaceBoardStatusColumnWidth(statusId, null),
+    [setWorkspaceBoardStatusColumnWidth]
+  )
+  const columnResize = useWorkspaceKanbanColumnResize({
+    resolveWidth: resolveColumnWidth,
+    onCommitWidth: setWorkspaceBoardStatusColumnWidth,
+    onResetWidth: resetColumnWidth
+  })
+  const collapsedColumnIds = useMemo(
+    () => new Set(workspaceBoardCollapsedColumns),
+    [workspaceBoardCollapsedColumns]
+  )
   const maybeSyncWorkspaceBoardTaskStatuses = useWorkspaceBoardTaskStatusSync({
     enabled: syncTaskStatusFromWorkspaceBoard,
     worktreesByKey: worktreeByKey,
@@ -245,6 +278,8 @@ function WorkspaceKanbanDrawerContent({
       areaSelectionOverlayRef={areaSelectionOverlayRef}
       boardRef={boardRef}
       dragPreview={dragPreview}
+      drawerWidth={workspaceBoardDrawerWidth}
+      onDrawerWidthChange={setWorkspaceBoardDrawerWidth}
       leftSidebarStyle={leftSidebarStyle}
       onAreaSelectionPointerDown={handleAreaSelectionPointerDown}
       onCardPointerDownCapture={onCardPointerDownCapture}
@@ -286,8 +321,9 @@ function WorkspaceKanbanDrawerContent({
         hasQuery,
         repoMap,
         activeWorktreeIdentity,
-        columnWidth,
-        isResizingColumn,
+        columnResize,
+        collapsedColumnIds,
+        onToggleColumnCollapsed: toggleWorkspaceBoardColumnCollapsed,
         dragOverStatus,
         renderCards,
         selectedWorktreeIds,
@@ -299,9 +335,7 @@ function WorkspaceKanbanDrawerContent({
         onSelectionGesture: updateSelectionForGesture,
         onContextMenuSelect: selectRenderedForContextMenu,
         onAssignWorkspaceStatus: moveWorktreesToStatus,
-        onCreateWorktree: createWorktreeForStatus,
-        onColumnResizeStart,
-        onColumnResizeKeyDown
+        onCreateWorktree: createWorktreeForStatus
       }}
     />
   )

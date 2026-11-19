@@ -7610,7 +7610,10 @@
           "8ad104642b": "Empty",
           "3611d1ae7f": "Resize workspace board columns",
           "2df01a03ff": "No matches",
-          "newWorkspaceIn": "New workspace in {{status}}"
+          "newWorkspaceIn": "New workspace in {{status}}",
+          "expandColumn": "Expand {{status}}",
+          "collapseColumn": "Collapse {{status}}",
+          "resizeColumn": "Resize {{status}} column. Double-click to reset."
         },
         "WorkspaceStatusAppearancePopover": {
           "514be2f569": "Set {{value0}} color to {{value1}}",
@@ -8546,6 +8549,9 @@
           "browseFolder": "Browse folder…",
           "cloneFromUrl": "Clone from URL…",
           "createNewProject": "Create new project…"
+        },
+        "WorkspaceKanbanSheet": {
+          "resizeBoard": "Resize workspace board. Double-click to reset."
         }
       },
       "shared": {
